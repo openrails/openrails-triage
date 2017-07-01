@@ -134,6 +134,9 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		public DirectionApproved DirectionApproved => Json.direction_approved ? DirectionApproved.Approved : DirectionApproved.NeedsApproval;
 		public DefinitionStatus DefinitionStatus => DefinitionStatusMapping[Json.definition_status];
 		public ImplementationStatus ImplementationStatus => ImplementationStatusMapping[Json.implementation_status];
+		public bool HasApprover => Json.approver_link != null;
+		public bool HasDrafter => Json.drafter_link != null;
+		public bool HasAssignee => Json.assignee_link != null;
 
 		internal readonly Cache Cache;
 		internal readonly JsonSpecification Json;
