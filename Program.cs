@@ -44,16 +44,13 @@ namespace Open_Rails_Roadmap_bot
 
 			var milestones = await project.GetActiveMilestones();
 			foreach (var milestone in milestones)
+			{
 				Console.WriteLine("Milestone: {0}", milestone.Name);
 
-			var specifications = await project.GetValidSpecifications();
-			foreach (var specification in specifications)
-				Console.WriteLine("Specification: {0}", specification.Name);
-
-			var chosenMilestone = milestones.Find(m => m.Name == "Open Rails 1.3");
-			var milestoneSpecifications = await chosenMilestone.GetSpecifications();
-			foreach (var specification in milestoneSpecifications)
-				Console.WriteLine("Specification for {1}: {0}", specification.Name, chosenMilestone.Name);
+				var milestoneSpecifications = await milestone.GetSpecifications();
+				foreach (var specification in milestoneSpecifications)
+					Console.WriteLine("    Specification: {0}", specification.Name);
+			}
 		}
 	}
 }
