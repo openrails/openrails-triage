@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -17,7 +16,6 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 
 		internal async Task<T> Get<T>(string url)
 		{
-			System.Console.WriteLine("{0}<{1}>", typeof(T).FullName, url);
 			var response = await new HttpClient().GetAsync(url);
 			var text = await response.Content.ReadAsStringAsync();
 			return JsonConvert.DeserializeObject<T>(text);
