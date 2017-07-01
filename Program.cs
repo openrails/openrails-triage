@@ -49,7 +49,13 @@ namespace Open_Rails_Roadmap_bot
 
 				var milestoneSpecifications = await milestone.GetSpecifications();
 				foreach (var specification in milestoneSpecifications)
-					Console.WriteLine("    Specification: {0}", specification.Name);
+					Console.WriteLine("    Specification: {0} ({1}, {2}, {3}, {4}, {5})",
+						specification.Name,
+						specification.LifecycleStatus,
+						specification.Priority,
+						specification.DirectionApproved,
+						specification.DefinitionStatus,
+						specification.ImplementationStatus);
 			}
 		}
 	}
