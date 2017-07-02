@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Open_Rails_Roadmap_bot.Launchpad
@@ -15,6 +16,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		public string name;
 		public string title;
 		public string summary;
+		public DateTimeOffset date_created;
 		public string lifecycle_status;
 		public string priority;
 		public bool direction_approved;
@@ -26,7 +28,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		public string milestone_link;
 	}
 
-	public enum LifecycleStatus
+	public enum Lifecycle
 	{
 		NotStarted,
 		Started,
@@ -43,13 +45,13 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		Essential,
 	}
 
-	public enum DirectionApproved
+	public enum Direction
 	{
 		Approved,
 		NeedsApproval,
 	}
 
-	public enum DefinitionStatus
+	public enum Definition
 	{
 		Approved,
 		PendingApproval,
@@ -61,7 +63,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		Obsolete,
 	}
 
-	public enum ImplementationStatus
+	public enum Implementation
 	{
 		Unknown,
 		NotStarted,
@@ -80,11 +82,11 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 
 	public class Specification
 	{
-		static Dictionary<string, LifecycleStatus> LifecycleStatusMapping = new Dictionary<string, LifecycleStatus>()
+		static Dictionary<string, Lifecycle> LifecycleMapping = new Dictionary<string, Lifecycle>()
 		{
-			{ "Not started", LifecycleStatus.NotStarted },
-			{ "Started", LifecycleStatus.Started },
-			{ "Complete", LifecycleStatus.Complete },
+			{ "Not started", Lifecycle.NotStarted },
+			{ "Started", Lifecycle.Started },
+			{ "Complete", Lifecycle.Complete },
 		};
 
 		static Dictionary<string, Priority> PriorityMapping = new Dictionary<string, Priority>()
@@ -97,46 +99,48 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 			{ "Essential", Priority.Essential },
 		};
 
-		static Dictionary<string, DefinitionStatus> DefinitionStatusMapping = new Dictionary<string, DefinitionStatus>()
+		static Dictionary<string, Definition> DefinitionMapping = new Dictionary<string, Definition>()
 		{
-			{ "Approved", DefinitionStatus.Approved },
-			{ "Pending Approval", DefinitionStatus.PendingApproval },
-			{ "Review", DefinitionStatus.Review },
-			{ "Drafting", DefinitionStatus.Drafting },
-			{ "Discussion", DefinitionStatus.Discussion },
-			{ "New", DefinitionStatus.New },
-			{ "Superseded", DefinitionStatus.Superseded },
-			{ "Obsolete", DefinitionStatus.Obsolete },
+			{ "Approved", Definition.Approved },
+			{ "Pending Approval", Definition.PendingApproval },
+			{ "Review", Definition.Review },
+			{ "Drafting", Definition.Drafting },
+			{ "Discussion", Definition.Discussion },
+			{ "New", Definition.New },
+			{ "Superseded", Definition.Superseded },
+			{ "Obsolete", Definition.Obsolete },
 		};
 
-		static Dictionary<string, ImplementationStatus> ImplementationStatusMapping = new Dictionary<string, ImplementationStatus>()
+		static Dictionary<string, Implementation> ImplementationMapping = new Dictionary<string, Implementation>()
 		{
-			{ "Unknown", ImplementationStatus.Unknown },
-			{ "Not started", ImplementationStatus.NotStarted },
-			{ "Deferred", ImplementationStatus.Deferred },
-			{ "Needs Infrastructure", ImplementationStatus.NeedsInfrastructure },
-			{ "Blocked", ImplementationStatus.Blocked },
-			{ "Started", ImplementationStatus.Started },
-			{ "Slow progress", ImplementationStatus.SlowProgress },
-			{ "Good progress", ImplementationStatus.GoodProgress },
-			{ "Beta Available", ImplementationStatus.BetaAvailable },
-			{ "Needs Code Review", ImplementationStatus.NeedsCodeReview },
-			{ "Deployment", ImplementationStatus.Deployment },
-			{ "Implemented", ImplementationStatus.Implemented },
-			{ "Informational", ImplementationStatus.Informational },
+			{ "Unknown", Implementation.Unknown },
+			{ "Not started", Implementation.NotStarted },
+			{ "Deferred", Implementation.Deferred },
+			{ "Needs Infrastructure", Implementation.NeedsInfrastructure },
+			{ "Blocked", Implementation.Blocked },
+			{ "Started", Implementation.Started },
+			{ "Slow progress", Implementation.SlowProgress },
+			{ "Good progress", Implementation.GoodProgress },
+			{ "Beta Available", Implementation.BetaAvailable },
+			{ "Needs Code Review", Implementation.NeedsCodeReview },
+			{ "Deployment", Implementation.Deployment },
+			{ "Implemented", Implementation.Implemented },
+			{ "Informational", Implementation.Informational },
 		};
 
 		public string Id => Json.name;
 		public string Name => Json.title;
 		public string Summary => Json.summary;
-		public LifecycleStatus LifecycleStatus => LifecycleStatusMapping[Json.lifecycle_status];
+		public DateTimeOffset Created => Json.date_created;
+		public Lifecycle Lifecycle => LifecycleMapping[Json.lifecycle_status];
 		public Priority Priority => PriorityMapping[Json.priority];
-		public DirectionApproved DirectionApproved => Json.direction_approved ? DirectionApproved.Approved : DirectionApproved.NeedsApproval;
-		public DefinitionStatus DefinitionStatus => DefinitionStatusMapping[Json.definition_status];
-		public ImplementationStatus ImplementationStatus => ImplementationStatusMapping[Json.implementation_status];
+		public Direction Direction => Json.direction_approved ? Direction.Approved : Direction.NeedsApproval;
+		public Definition Definition => DefinitionMapping[Json.definition_status];
+		public Implementation Implementation => ImplementationMapping[Json.implementation_status];
 		public bool HasApprover => Json.approver_link != null;
 		public bool HasDrafter => Json.drafter_link != null;
 		public bool HasAssignee => Json.assignee_link != null;
+		public bool HasMilestone => Json.milestone_link != null;
 
 		internal readonly Cache Cache;
 		internal readonly JsonSpecification Json;

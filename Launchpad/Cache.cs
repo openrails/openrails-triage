@@ -8,6 +8,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 {
 	public class Cache
 	{
+		HttpClient Client = new HttpClient();
 		Dictionary<string, Project> Projects = new Dictionary<string, Project>();
 		Dictionary<string, List<Milestone>> MilestoneCollections = new Dictionary<string, List<Milestone>>();
 		Dictionary<string, Milestone> Milestones = new Dictionary<string, Milestone>();
@@ -16,7 +17,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 
 		internal async Task<T> Get<T>(string url)
 		{
-			var response = await new HttpClient().GetAsync(url);
+			var response = await Client.GetAsync(url);
 			var text = await response.Content.ReadAsStringAsync();
 			return JsonConvert.DeserializeObject<T>(text);
 		}
