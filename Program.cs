@@ -41,14 +41,15 @@ namespace Open_Rails_Roadmap_bot
 		static async Task Main(IConfigurationRoot config)
 		{
 			var launchpad = new Launchpad.Cache();
+			var launchpadConfig = config.GetSection("launchpad");
 
-			var project = await launchpad.GetProject(config.GetSection("launchpad")["project"]);
+			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
 			Console.WriteLine("Project: {0}", project.Name);
 
-			await SpecificationTriage(project);
+			await SpecificationTriage(project, launchpadConfig);
 		}
 
-		static async Task SpecificationTriage(Project project)
+		static async Task SpecificationTriage(Project project, IConfigurationSection config)
 		{
 			var discussionStartDate = new DateTimeOffset(2015, 9, 20, 0, 0, 0, TimeSpan.Zero);
 
@@ -65,38 +66,23 @@ namespace Open_Rails_Roadmap_bot
 				{
 					issues.Add("Definition approved without direction approved");
 				}
-				if (specification.Created > discussionStartDate
-					&& specification.Definition == Definition.Approved
-					&& specification.Implementation != Implementation.Informational
-					&& !specification.Summary.Contains("http://www.elvastower.com/forums/index.php?/topic/"))
+				// TODO: For roadmap links, check milestone > 1.1.
+				foreach (var link in config.GetSection("links").GetChildren())
 				{
-					issues.Add("Definition approved without discussion link");
-				}
-				if (specification.Created > discussionStartDate
-					&& specification.Definition == Definition.Approved
-					&& specification.Implementation != Implementation.Informational
-					&& specification.Summary.Contains("http://www.elvastower.com/forums/index.php?/topic/")
-					&& !specification.Summary.Contains("Discussion: http://www.elvastower.com/forums/index.php?/topic/")
-					&& !specification.Summary.Contains("Discussion (developers only): http://www.elvastower.com/forums/index.php?/topic/"))
-				{
-					issues.Add("Definition approved without normal discussion link");
-				}
-				if (specification.Created > discussionStartDate
-					// TODO: Check milestone is > 1.1
-					&& specification.Definition == Definition.Approved
-					&& specification.Implementation != Implementation.Informational
-					&& !specification.Summary.Contains("https://trello.com/c/"))
-				{
-					issues.Add("Definition approved without roadmap link");
-				}
-				if (specification.Created > discussionStartDate
-					// TODO: Check milestone is > 1.1
-					&& specification.Definition == Definition.Approved
-					&& specification.Implementation != Implementation.Informational
-					&& specification.Summary.Contains("https://trello.com/c/")
-					&& !specification.Summary.Contains("Roadmap: https://trello.com/c/"))
-				{
-					issues.Add("Definition approved without normal roadmap link");
+					var forms = link.GetSection("expectedForms").GetChildren();
+					if (specification.Created > discussionStartDate
+						&& specification.Definition == Definition.Approved
+						&& specification.Implementation != Implementation.Informational)
+					{
+						if (!specification.Summary.Contains(link["baseUrl"]))
+						{
+							issues.Add($"Definition approved without {link.Key} link");
+						}
+						else if (!forms.Any(form => specification.Summary.Contains(form.Value)))
+						{
+							issues.Add($"Definition approved without normal {link.Key} link");
+						}
+					}
 				}
 				if (specification.Definition == Definition.Approved
 					&& !specification.HasApprover)
