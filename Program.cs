@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -117,7 +117,7 @@ namespace Open_Rails_Roadmap_bot
 					Console.WriteLine(
 						$"Blueprint '{specification.Name}'\n" +
 						$"  Status: {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
-						String.Join("\n", issues.Select(issue => $"  {issue}"))
+						String.Join("\n", issues.Select(issue => $"  Issue: {issue}"))
 					);
 				}
 			}
