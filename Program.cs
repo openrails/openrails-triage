@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -51,8 +51,6 @@ namespace Open_Rails_Roadmap_bot
 
 		static async Task SpecificationTriage(Project project, IConfigurationSection config)
 		{
-			var discussionStartDate = new DateTimeOffset(2015, 9, 20, 0, 0, 0, TimeSpan.Zero);
-
 			foreach (var specification in await project.GetSpecifications())
 			{
 				var issues = new List<string>();
@@ -69,8 +67,9 @@ namespace Open_Rails_Roadmap_bot
 				// TODO: For roadmap links, check milestone > 1.1.
 				foreach (var link in config.GetSection("links").GetChildren())
 				{
+					var hasStartDate = DateTimeOffset.TryParse(link["startDate"] ?? "", out var startDate);
 					var forms = link.GetSection("expectedForms").GetChildren();
-					if (specification.Created > discussionStartDate
+					if ((!hasStartDate || specification.Created > startDate)
 						&& specification.Definition == Definition.Approved
 						&& specification.Implementation != Implementation.Informational)
 					{
