@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Open_Rails_Roadmap_bot.Launchpad
 {
@@ -141,6 +142,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		public bool HasDrafter => Json.drafter_link != null;
 		public bool HasAssignee => Json.assignee_link != null;
 		public bool HasMilestone => Json.milestone_link != null;
+		public async Task<Milestone> GetMilestone() => HasMilestone ? await Cache.GetMilestone(Json.milestone_link) : null;
 
 		internal readonly Cache Cache;
 		internal readonly JsonSpecification Json;

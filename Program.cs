@@ -53,6 +53,8 @@ namespace Open_Rails_Roadmap_bot
 		{
 			foreach (var specification in await project.GetSpecifications())
 			{
+				var milestone = await specification.GetMilestone();
+
 				var issues = new List<string>();
 				if (specification.Direction == Direction.Approved
 					&& specification.Priority <= Priority.Undefined)
@@ -64,12 +66,13 @@ namespace Open_Rails_Roadmap_bot
 				{
 					issues.Add("Definition approved without direction approved");
 				}
-				// TODO: For roadmap links, check milestone > 1.1.
 				foreach (var link in config.GetSection("links").GetChildren())
 				{
 					var hasStartDate = DateTimeOffset.TryParse(link["startDate"] ?? "", out var startDate);
+					var startMilestone = link["startMilestone"];
 					var forms = link.GetSection("expectedForms").GetChildren();
 					if ((!hasStartDate || specification.Created > startDate)
+						&& (milestone == null || startMilestone == null || string.Compare(milestone.Id, startMilestone) > 0)
 						&& specification.Definition == Definition.Approved
 						&& specification.Implementation != Implementation.Informational)
 					{
@@ -115,7 +118,7 @@ namespace Open_Rails_Roadmap_bot
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
-						$"Blueprint '{specification.Name}'\n" +
+						$"Blueprint '{specification.Name}' ({milestone?.Name})\n" +
 						$"  Status: {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  Issue: {issue}"))
 					);
