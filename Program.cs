@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace Open_Rails_Triage
 			{
 				commandLineParser.ParseCommandLine(args);
 
-				Main(new ConfigurationBuilder()
+				AsyncMain(new ConfigurationBuilder()
 					.AddJsonFile(config.Value.FullName, true)
 					.Build()).Wait();
 			}
@@ -38,7 +38,7 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task Main(IConfigurationRoot config)
+		static async Task AsyncMain(IConfigurationRoot config)
 		{
 			var launchpad = new Launchpad.Cache();
 			var launchpadConfig = config.GetSection("launchpad");

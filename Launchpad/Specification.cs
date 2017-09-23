@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Launchpad
 {
+	#pragma warning disable CS0649
+
 	class JsonSpecificationCollection
 	{
 		public JsonSpecification[] entries;
@@ -28,6 +30,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string assignee_link;
 		public string milestone_link;
 	}
+
+	#pragma warning restore CS0649
 
 	public enum Lifecycle
 	{

@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Launchpad
 {
+	#pragma warning disable CS0649
+
 	class JsonMilestoneCollection
 	{
 		public JsonMilestone[] entries;
@@ -18,6 +20,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string title;
 		public string target_link;
 	}
+
+	#pragma warning restore CS0649
 
 	public class Milestone
 	{

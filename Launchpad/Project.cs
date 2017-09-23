@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Launchpad
 {
+	#pragma warning disable CS0649
+
 	class JsonProject
 	{
 		public string self_link;
@@ -13,6 +15,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string active_milestones_collection_link;
 		public string valid_specifications_collection_link;
 	}
+
+	#pragma warning restore CS0649
 
 	public class Project
 	{
