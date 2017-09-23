@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Open_Rails_Roadmap_bot.Launchpad
+namespace Open_Rails_Triage.Launchpad
 {
 	class JsonSpecificationCollection
 	{
@@ -59,7 +59,7 @@ namespace Open_Rails_Roadmap_bot.Launchpad
 		Review,
 		Drafting,
 		Discussion,
-		New, 
+		New,
 		Superseded,
 		Obsolete,
 	}

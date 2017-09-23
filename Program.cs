@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using Open_Rails_Roadmap_bot.Launchpad;
+using Open_Rails_Triage.Launchpad;
 
-namespace Open_Rails_Roadmap_bot
+namespace Open_Rails_Triage
 {
 	class Program
 	{

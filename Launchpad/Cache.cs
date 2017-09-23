@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Open_Rails_Roadmap_bot.Launchpad
+namespace Open_Rails_Triage.Launchpad
 {
 	public class Cache
 	{

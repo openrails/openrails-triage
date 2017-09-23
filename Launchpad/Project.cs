@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Open_Rails_Roadmap_bot.Launchpad
+namespace Open_Rails_Triage.Launchpad
 {
 	class JsonProject
 	{
