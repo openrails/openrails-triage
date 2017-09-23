@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,6 +45,7 @@ namespace Open_Rails_Triage
 
 			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
 			Console.WriteLine("Project: {0}", project.Name);
+			Console.WriteLine();
 
 			await SpecificationTriage(project, launchpadConfig);
 		}
@@ -122,6 +123,7 @@ namespace Open_Rails_Triage
 						$"  Status: {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  Issue: {issue}"))
 					);
+					Console.WriteLine();
 				}
 			}
 		}
