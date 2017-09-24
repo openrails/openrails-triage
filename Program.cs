@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,6 +40,11 @@ namespace Open_Rails_Triage
 
 		static async Task AsyncMain(IConfigurationRoot config)
 		{
+			var gitConfig = config.GetSection("git");
+			var git = new Git.Project(GetGitPath());
+			git.Init(gitConfig["projectUrl"]);
+			git.Fetch();
+
 			var launchpad = new Launchpad.Cache();
 			var launchpadConfig = config.GetSection("launchpad");
 
@@ -48,6 +53,12 @@ namespace Open_Rails_Triage
 			Console.WriteLine();
 
 			await SpecificationTriage(project, launchpadConfig);
+		}
+
+		private static string GetGitPath()
+		{
+			var appFilePath = System.Reflection.Assembly.GetEntryAssembly().Location;
+			return Path.Combine(Path.GetDirectoryName(appFilePath), "git");
 		}
 
 		static async Task SpecificationTriage(Project project, IConfigurationSection config)
