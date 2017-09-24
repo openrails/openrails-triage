@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,6 +44,7 @@ namespace Open_Rails_Triage
 			var git = new Git.Project(GetGitPath());
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
+			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Now.AddDays(-7));
 
 			var launchpad = new Launchpad.Cache();
 			var launchpadConfig = config.GetSection("launchpad");
