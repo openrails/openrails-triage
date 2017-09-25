@@ -19,6 +19,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string name;
 		public string title;
 		public string summary;
+		public string whiteboard;
+		public string workitems_text;
 		public DateTimeOffset date_created;
 		public string lifecycle_status;
 		public string priority;
@@ -29,6 +31,7 @@ namespace Open_Rails_Triage.Launchpad
 		public string drafter_link;
 		public string assignee_link;
 		public string milestone_link;
+		public string web_link;
 	}
 
 	#pragma warning restore CS0649
@@ -136,6 +139,14 @@ namespace Open_Rails_Triage.Launchpad
 		public string Id => Json.name;
 		public string Name => Json.title;
 		public string Summary => Json.summary;
+		public string Whiteboard => Json.whiteboard;
+/*
+Work items:
+Proof of concept (as used for Demo Model 1): DONE
+Decide how best to activate feature: TODO
+Include copy utility in distribution: TODO
+*/
+		public string WorkItems => Json.workitems_text;
 		public DateTimeOffset Created => Json.date_created;
 		public Lifecycle Lifecycle => LifecycleMapping[Json.lifecycle_status];
 		public Priority Priority => PriorityMapping[Json.priority];

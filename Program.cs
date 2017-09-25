@@ -53,7 +53,11 @@ namespace Open_Rails_Triage
 			var launchpad = new Launchpad.Cache();
 			var launchpadConfig = config.GetSection("launchpad");
 			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
-			await SpecificationTriage(project, launchpadConfig);
+
+			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
+			var launchpadCommits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(launchpadCommitsConfig["startDate"]));
+			Console.WriteLine();
+			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
 		}
 
 		static string GetGitPath()
@@ -80,8 +84,12 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config)
+		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
 		{
+			var commitsConfig = config.GetSection("commits");
+			var commitReferencesConfig = commitsConfig.GetSection("references");
+			var commitReferencesSource = commitReferencesConfig.GetSection("source").GetChildren();
+
 			foreach (var specification in await project.GetSpecifications())
 			{
 				var milestone = await specification.GetMilestone();
@@ -130,7 +138,7 @@ namespace Open_Rails_Triage
 				if (specification.Implementation >= Implementation.Started
 					&& specification.Definition != Definition.Approved)
 				{
-					issues.Add("Implementation started without definition approved");
+					issues.Add("Implementation started without approved definition");
 				}
 				if (specification.Implementation >= Implementation.Started
 					&& !specification.HasAssignee)
@@ -142,10 +150,45 @@ namespace Open_Rails_Triage
 				{
 					issues.Add("Implementation completed without milestone");
 				}
-				// Check for commits mentioning specification:
-				//   If so, check specification has no or current milestone
-				//   If so, check definition is approved
-				//   If not, and it has no or current milestone, check implementation is not implemented
+				var commitMentions = commits.Any(commit => commit.Message.Contains(specification.Json.web_link));
+				if (specification.Whiteboard != null)
+				{
+					foreach (var referenceSource in commitReferencesSource)
+					{
+						var match = Regex.Match(specification.Whiteboard, referenceSource.Value, RegexOptions.IgnoreCase);
+						while (!commitMentions && match.Success)
+						{
+							var target = commitReferencesConfig["target"].Replace("%1", match.Groups[1].Value);
+							if (commits.Any(commit => commit.Message.Contains(target)))
+							{
+								commitMentions = true;
+								break;
+							}
+							match = match.NextMatch();
+						}
+					}
+				}
+				if (commitMentions)
+				{
+					if (milestone != null
+						&& milestone.Id != commitsConfig["currentMilestone"])
+					{
+						issues.Add("Code committed for incorrect milestone");
+					}
+					if (specification.Definition != Definition.Approved)
+					{
+						issues.Add("Code committed without approved definition");
+					}
+				}
+				else
+				{
+					if (specification.Implementation == Implementation.Implemented
+						&& milestone != null
+						&& milestone.Id == commitsConfig["currentMilestone"])
+					{
+						issues.Add("No code committed for current milestone");
+					}
+				}
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
