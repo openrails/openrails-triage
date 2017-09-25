@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 
 namespace Open_Rails_Triage.Git
 {
@@ -15,6 +16,7 @@ namespace Open_Rails_Triage.Git
 		public string CommitterEmail { get; private set; }
 		public DateTimeOffset CommitterDate { get; private set; }
 		public string Message { get; private set; }
+		public string Summary => Message.Split('\n')[0];
 
 		internal Commit(string key) => (Key, Message) = (key, "");
 
@@ -22,7 +24,7 @@ namespace Open_Rails_Triage.Git
 		{
 			var commits = new List<Commit>();
 			Commit commit = null;
-			foreach (var line in lines)
+			foreach (var line in lines.Select(line => line.Replace("\0", "")))
 			{
 				if (line.Length == 40 && line.IndexOf(' ') == -1)
 				{
