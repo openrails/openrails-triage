@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Open_Rails_Triage.Git;
 using Open_Rails_Triage.Launchpad;
 
 namespace Open_Rails_Triage
@@ -45,24 +47,40 @@ namespace Open_Rails_Triage
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
 			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Now.AddDays(-7));
+			Console.WriteLine();
+			CommitTriage(commits, gitConfig);
 
 			var launchpad = new Launchpad.Cache();
 			var launchpadConfig = config.GetSection("launchpad");
-
 			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
-			Console.WriteLine("Project: {0}", project.Name);
-			Console.WriteLine();
-
 			await SpecificationTriage(project, launchpadConfig);
 		}
 
-		private static string GetGitPath()
+		static string GetGitPath()
 		{
 			var appFilePath = System.Reflection.Assembly.GetEntryAssembly().Location;
 			return Path.Combine(Path.GetDirectoryName(appFilePath), "git");
 		}
 
-		static async Task SpecificationTriage(Project project, IConfigurationSection config)
+		static void CommitTriage(List<Commit> commits, IConfigurationSection gitConfig)
+		{
+			var commitMessagesConfig = gitConfig.GetSection("commitMessages");
+			var forms = commitMessagesConfig.GetSection("expectedForms").GetChildren();
+			foreach (var commit in commits)
+			{
+				if (!forms.Any(form => Regex.IsMatch(commit.Message, form.Value, RegexOptions.IgnoreCase)))
+				{
+					Console.WriteLine(
+						$"Commit '{commit.Summary}'\n" +
+						$"  On {commit.AuthorDate} by {commit.AuthorName}\n" +
+						$"  Issue: {commitMessagesConfig["error"]}"
+					);
+					Console.WriteLine();
+				}
+			}
+		}
+
+		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config)
 		{
 			foreach (var specification in await project.GetSpecifications())
 			{
