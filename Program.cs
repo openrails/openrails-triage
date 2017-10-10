@@ -68,6 +68,7 @@ namespace Open_Rails_Triage
 
 		static void CommitTriage(List<Commit> commits, IConfigurationSection gitConfig)
 		{
+			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var commitMessagesConfig = gitConfig.GetSection("commitMessages");
 			var forms = commitMessagesConfig.GetSection("expectedForms").GetChildren();
 			foreach (var commit in commits)
@@ -75,7 +76,7 @@ namespace Open_Rails_Triage
 				if (!forms.Any(form => Regex.IsMatch(commit.Message, form.Value, RegexOptions.IgnoreCase)))
 				{
 					Console.WriteLine(
-						$"Commit '{commit.Summary}'\n" +
+						$"Commit '{commit.Summary}' {webUrlConfig["commit"].Replace("%KEY%", commit.Key)}\n" +
 						$"  On {commit.AuthorDate} by {commit.AuthorName}\n" +
 						$"  Issue: {commitMessagesConfig["error"]}"
 					);
@@ -192,7 +193,7 @@ namespace Open_Rails_Triage
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
-						$"Blueprint '{specification.Name}' ({milestone?.Name})\n" +
+						$"Blueprint '{specification.Name}' ({milestone?.Name}) {specification.Json.web_link}\n" +
 						$"  Status: {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  Issue: {issue}"))
 					);
