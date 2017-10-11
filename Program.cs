@@ -46,6 +46,9 @@ namespace Open_Rails_Triage
 			var git = new Git.Project(GetGitPath());
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
+
+			Console.WriteLine("Commit triage");
+			Console.WriteLine("=============");
 			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Now.AddDays(-7));
 			Console.WriteLine();
 			CommitTriage(commits, gitConfig);
@@ -54,6 +57,8 @@ namespace Open_Rails_Triage
 			var launchpadConfig = config.GetSection("launchpad");
 			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
 
+			Console.WriteLine("Specification triage");
+			Console.WriteLine("====================");
 			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
 			var launchpadCommits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(launchpadCommitsConfig["startDate"]));
 			Console.WriteLine();
@@ -76,9 +81,9 @@ namespace Open_Rails_Triage
 				if (!forms.Any(form => Regex.IsMatch(commit.Message, form.Value, RegexOptions.IgnoreCase)))
 				{
 					Console.WriteLine(
-						$"Commit '{commit.Summary}' {webUrlConfig["commit"].Replace("%KEY%", commit.Key)}\n" +
-						$"  On {commit.AuthorDate} by {commit.AuthorName}\n" +
-						$"  Issue: {commitMessagesConfig["error"]}"
+						$"- **Commit** '{commit.Summary}' {webUrlConfig["commit"].Replace("%KEY%", commit.Key)}\n" +
+						$"  - **At** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
+						$"  - **Issue:** {commitMessagesConfig["error"]}"
 					);
 					Console.WriteLine();
 				}
@@ -193,9 +198,9 @@ namespace Open_Rails_Triage
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
-						$"Blueprint '{specification.Name}' ({milestone?.Name}) {specification.Json.web_link}\n" +
-						$"  Status: {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
-						String.Join("\n", issues.Select(issue => $"  Issue: {issue}"))
+						$"- **Specification** '{specification.Name}' ({milestone?.Name}) {specification.Json.web_link}\n" +
+						$"  - **Status:** {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
+						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
 					);
 					Console.WriteLine();
 				}

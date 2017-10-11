@@ -44,8 +44,8 @@ namespace Open_Rails_Triage.Git
 		IEnumerable<string> GetCommandOutput(string command)
 		{
 			var args = $"--no-pager {command}";
-			Console.WriteLine($"[{GitPath}]");
-			Console.WriteLine($"> git {args}");
+			Console.WriteLine("```shell");
+			Console.WriteLine($"{GitPath}> git {args}");
 			var git = Process.Start(new ProcessStartInfo()
 			{
 				WorkingDirectory = GitPath,
@@ -60,6 +60,7 @@ namespace Open_Rails_Triage.Git
 			}
 			git.WaitForExit();
 			Debug.Assert(git.ExitCode == 0, $"git {command} failed: {git.ExitCode}");
+			Console.WriteLine("```");
 		}
 	}
 }
