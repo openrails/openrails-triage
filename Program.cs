@@ -104,12 +104,12 @@ namespace Open_Rails_Triage
 				if (specification.Direction == Direction.Approved
 					&& specification.Priority <= Priority.Undefined)
 				{
-					issues.Add("Direction approved without priority");
+					issues.Add("Direction is approved but priority is missing");
 				}
 				if (specification.Definition == Definition.Approved
 					&& specification.Direction != Direction.Approved)
 				{
-					issues.Add("Definition approved without direction approved");
+					issues.Add("Definition is approved but direction is not approved");
 				}
 				foreach (var link in config.GetSection("links").GetChildren())
 				{
@@ -123,67 +123,69 @@ namespace Open_Rails_Triage
 					{
 						if (!specification.Summary.Contains(link["baseUrl"]))
 						{
-							issues.Add($"Definition approved without {link.Key} link");
+							issues.Add($"Definition is approved but no {link.Key} link is found");
 						}
 						else if (!forms.Any(form => specification.Summary.Contains(form.Value)))
 						{
-							issues.Add($"Definition approved without normal {link.Key} link");
+							issues.Add($"Definition is approved not no normal {link.Key} link is found");
 						}
 					}
 				}
 				if (specification.Definition == Definition.Approved
 					&& !specification.HasApprover)
 				{
-					issues.Add("Definition approved without approver");
+					issues.Add("Definition is approved but approver is missing");
 				}
 				if (specification.Definition <= Definition.Drafting
 					&& !specification.HasDrafter)
 				{
-					issues.Add("Definition in drafting (or later) without drafter");
+					issues.Add("Definition is drafting (or later) but drafter is missing");
 				}
 				if (specification.Implementation >= Implementation.Started
 					&& specification.Definition != Definition.Approved)
 				{
-					issues.Add("Implementation started without approved definition");
+					issues.Add("Implementation is started (or later) but definition is not approved");
 				}
 				if (specification.Implementation >= Implementation.Started
 					&& !specification.HasAssignee)
 				{
-					issues.Add("Implementation started without assignee");
+					issues.Add("Implementation is started (or later) but assignee is missing");
 				}
 				if (specification.Implementation == Implementation.Implemented
 					&& !specification.HasMilestone)
 				{
-					issues.Add("Implementation completed without milestone");
+					issues.Add("Implementation is completed but milestone is missing");
 				}
-				var commitMentions = commits.Any(commit => commit.Message.Contains(specification.Json.web_link));
+				var commitMentions = commits.Where(commit => commit.Message.Contains(specification.Json.web_link));
 				if (specification.Whiteboard != null)
 				{
 					foreach (var referenceSource in commitReferencesSource)
 					{
 						var match = Regex.Match(specification.Whiteboard, referenceSource.Value, RegexOptions.IgnoreCase);
-						while (!commitMentions && match.Success)
+						while (match.Success)
 						{
 							var target = commitReferencesConfig["target"].Replace("%1", match.Groups[1].Value);
-							if (commits.Any(commit => commit.Message.Contains(target)))
-							{
-								commitMentions = true;
-								break;
-							}
+							commitMentions = commitMentions.Union(commits.Where(commit => commit.Message.Contains(target)));
 							match = match.NextMatch();
 						}
 					}
 				}
-				if (commitMentions)
+				if (commitMentions.Any())
 				{
 					if (milestone != null
 						&& milestone.Id != commitsConfig["currentMilestone"])
 					{
-						issues.Add("Code committed for incorrect milestone");
+						issues.Add("Code was committed but milestone is incorrect");
 					}
 					if (specification.Definition != Definition.Approved)
 					{
-						issues.Add("Code committed without approved definition");
+						issues.Add("Code was committed but definition is not approved");
+					}
+					var latestCommit = commitMentions.OrderBy(commit => commit.AuthorDate).Last();
+					if ((DateTimeOffset.Now - latestCommit.AuthorDate).TotalDays > 28
+						&& specification.Implementation != Implementation.Implemented)
+					{
+						issues.Add("Code was committed more than 28 days ago but implementation is not complete");
 					}
 				}
 				else
@@ -192,7 +194,7 @@ namespace Open_Rails_Triage
 						&& milestone != null
 						&& milestone.Id == commitsConfig["currentMilestone"])
 					{
-						issues.Add("No code committed for current milestone");
+						issues.Add("No code was committed but implementation is complete and for current milestone");
 					}
 				}
 				if (issues.Count > 0)
