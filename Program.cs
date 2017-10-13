@@ -223,7 +223,7 @@ namespace Open_Rails_Triage
 				{
 					Console.WriteLine(
 						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
-						$"  - **Status:** {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
+						$"  - **Status:** {specification.Lifecycle}, {specification.Priority}, {specification.Direction}, {specification.Definition}, {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
 					);
 					Console.WriteLine();
@@ -241,7 +241,7 @@ namespace Open_Rails_Triage
 				{
 					Console.WriteLine(
 						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
-						$"  - **Status:** {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}"
+						$"  - **Status:** {specification.Lifecycle}, {specification.Priority}, {specification.Direction}, {specification.Definition}, {specification.Implementation}"
 					);
 					Console.WriteLine();
 				}
