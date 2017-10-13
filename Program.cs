@@ -59,14 +59,21 @@ namespace Open_Rails_Triage
 			Console.WriteLine("==========");
 			Console.WriteLine();
 			CommitLog(commits, gitConfig);
+
 			Console.WriteLine("Commit triage");
 			Console.WriteLine("=============");
 			Console.WriteLine();
 			CommitTriage(commits, gitConfig);
+
 			Console.WriteLine("Specification triage");
 			Console.WriteLine("====================");
 			Console.WriteLine();
 			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
+
+			Console.WriteLine("Specification approvals");
+			Console.WriteLine("=======================");
+			Console.WriteLine();
+			await SpecificationApprovals(project);
 		}
 
 		static string GetGitPath()
@@ -218,6 +225,23 @@ namespace Open_Rails_Triage
 						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
 						$"  - **Status:** {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
+					);
+					Console.WriteLine();
+				}
+			}
+		}
+
+		static async Task SpecificationApprovals(Launchpad.Project project)
+		{
+			foreach (var specification in await project.GetValidSpecifications())
+			{
+				var milestone = await specification.GetMilestone();
+
+				if (specification.Direction != Direction.Approved)
+				{
+					Console.WriteLine(
+						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
+						$"  - **Status:** {specification.Lifecycle} / {specification.Priority} / {specification.Direction} / {specification.Definition} / {specification.Implementation}"
 					);
 					Console.WriteLine();
 				}
