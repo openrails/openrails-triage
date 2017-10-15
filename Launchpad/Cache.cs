@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -14,6 +15,9 @@ namespace Open_Rails_Triage.Launchpad
 		Dictionary<string, Milestone> Milestones = new Dictionary<string, Milestone>();
 		Dictionary<string, List<Specification>> SpecificationCollections = new Dictionary<string, List<Specification>>();
 		Dictionary<string, Specification> Specifications = new Dictionary<string, Specification>();
+		Dictionary<string, List<BugTask>> BugTaskCollections = new Dictionary<string, List<BugTask>>();
+		Dictionary<string, BugTask> BugTasks = new Dictionary<string, BugTask>();
+		Dictionary<string, Bug> Bugs = new Dictionary<string, Bug>();
 
 		internal async Task<T> Get<T>(string url)
 		{
@@ -83,6 +87,41 @@ namespace Open_Rails_Triage.Launchpad
 		internal Specification FromJson(JsonSpecification json)
 		{
 			return Specifications[json.self_link] = new Specification(this, json);
+		}
+
+		public async Task<List<BugTask>> GetBugTaskCollection(string url)
+		{
+			if (!BugTaskCollections.ContainsKey(url))
+			{
+				var collection = new List<BugTask>();
+				var json = new JsonBugTaskCollection(url);
+				do
+				{
+					json = await Get<JsonBugTaskCollection>(json.next_collection_link);
+					collection.AddRange(json.entries.Select(BugTask => FromJson(BugTask)));
+				} while (json.next_collection_link != null);
+				BugTaskCollections[url] = collection;
+			}
+			return BugTaskCollections[url];
+		}
+
+		public async Task<BugTask> GetBugTask(string url)
+		{
+			if (!BugTasks.ContainsKey(url))
+				BugTasks[url] = new BugTask(this, await Get<JsonBugTask>(url));
+			return BugTasks[url];
+		}
+
+		internal BugTask FromJson(JsonBugTask json)
+		{
+			return BugTasks[json.self_link] = new BugTask(this, json);
+		}
+
+		public async Task<Bug> GetBug(string url)
+		{
+			if (!Bugs.ContainsKey(url))
+				Bugs[url] = new Bug(this, await Get<JsonBug>(url));
+			return Bugs[url];
 		}
 	}
 }
