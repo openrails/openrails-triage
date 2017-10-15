@@ -55,24 +55,9 @@ namespace Open_Rails_Triage
 			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
 			var launchpadCommits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(launchpadCommitsConfig["startDate"]));
 
-			Console.WriteLine("Commit log");
-			Console.WriteLine("==========");
-			Console.WriteLine();
 			CommitLog(commits, gitConfig);
-
-			Console.WriteLine("Commit triage");
-			Console.WriteLine("=============");
-			Console.WriteLine();
 			CommitTriage(commits, gitConfig);
-
-			Console.WriteLine("Specification triage");
-			Console.WriteLine("====================");
-			Console.WriteLine();
 			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
-
-			Console.WriteLine("Specification approvals");
-			Console.WriteLine("=======================");
-			Console.WriteLine();
 			await SpecificationApprovals(project);
 		}
 
@@ -84,11 +69,15 @@ namespace Open_Rails_Triage
 
 		static void CommitLog(List<Commit> commits, IConfigurationSection gitConfig)
 		{
+			Console.WriteLine("Commit log");
+			Console.WriteLine("==========");
+			Console.WriteLine();
+
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			foreach (var commit in commits)
 			{
 				Console.WriteLine(
-					$"- **Commit** [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}"
+					$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}"
 				);
 				Console.WriteLine();
 			}
@@ -96,6 +85,10 @@ namespace Open_Rails_Triage
 
 		static void CommitTriage(List<Commit> commits, IConfigurationSection gitConfig)
 		{
+			Console.WriteLine("Commit triage");
+			Console.WriteLine("=============");
+			Console.WriteLine();
+
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var commitMessagesConfig = gitConfig.GetSection("commitMessages");
 			var forms = commitMessagesConfig.GetSection("expectedForms").GetChildren();
@@ -104,7 +97,7 @@ namespace Open_Rails_Triage
 				if (!forms.Any(form => Regex.IsMatch(commit.Message, form.Value, RegexOptions.IgnoreCase)))
 				{
 					Console.WriteLine(
-						$"- **Commit** [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
+						$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
 						$"  - **Issue:** {commitMessagesConfig["error"]}"
 					);
 					Console.WriteLine();
@@ -114,6 +107,10 @@ namespace Open_Rails_Triage
 
 		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
 		{
+			Console.WriteLine("Specification triage");
+			Console.WriteLine("====================");
+			Console.WriteLine();
+
 			var commitsConfig = config.GetSection("commits");
 			var commitReferencesConfig = commitsConfig.GetSection("references");
 			var commitReferencesSource = commitReferencesConfig.GetSection("source").GetChildren();
@@ -222,7 +219,7 @@ namespace Open_Rails_Triage
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
-						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
+						$"- [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
 						$"  - **Status:** {specification.Lifecycle}, {specification.Priority}, {specification.Direction}, {specification.Definition}, {specification.Implementation}\n" +
 						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
 					);
@@ -233,6 +230,10 @@ namespace Open_Rails_Triage
 
 		static async Task SpecificationApprovals(Launchpad.Project project)
 		{
+			Console.WriteLine("Specification approvals");
+			Console.WriteLine("=======================");
+			Console.WriteLine();
+
 			foreach (var specification in await project.GetValidSpecifications())
 			{
 				var milestone = await specification.GetMilestone();
@@ -240,7 +241,7 @@ namespace Open_Rails_Triage
 				if (specification.Direction != Direction.Approved)
 				{
 					Console.WriteLine(
-						$"- **Specification** [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
+						$"- [{specification.Name} ({milestone?.Name})]({specification.Json.web_link})\n" +
 						$"  - **Status:** {specification.Lifecycle}, {specification.Priority}, {specification.Direction}, {specification.Definition}, {specification.Implementation}"
 					);
 					Console.WriteLine();
