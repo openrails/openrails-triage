@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -204,7 +204,7 @@ namespace Open_Rails_Triage
 					if ((DateTimeOffset.Now - latestCommit.AuthorDate).TotalDays > 28
 						&& specification.Implementation != Implementation.Implemented)
 					{
-						issues.Add("Code was committed more than 28 days ago but implementation is not complete");
+						issues.Add("Code was committed exclusively more than 28 days ago but implementation is not complete");
 					}
 				}
 				else
