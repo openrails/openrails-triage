@@ -194,7 +194,7 @@ namespace Open_Rails_Triage
 					if (milestone != null
 						&& milestone.Id != commitsConfig["currentMilestone"])
 					{
-						issues.Add("Code was committed but milestone is incorrect");
+						issues.Add($"Code was committed but milestone is {milestone.Id} (expected missing/{commitsConfig["currentMilestone"]})");
 					}
 					if (specification.Definition != Definition.Approved)
 					{
@@ -213,7 +213,7 @@ namespace Open_Rails_Triage
 						&& milestone != null
 						&& milestone.Id == commitsConfig["currentMilestone"])
 					{
-						issues.Add("No code was committed but implementation is complete and for current milestone");
+						issues.Add("No code was committed but implementation for current milestone is complete");
 					}
 				}
 				if (issues.Count > 0)
