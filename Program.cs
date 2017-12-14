@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -57,6 +57,7 @@ namespace Open_Rails_Triage
 
 			CommitLog(commits, gitConfig);
 			CommitTriage(commits, gitConfig);
+			await BugTriage(project, launchpadConfig);
 			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
 			await SpecificationApprovals(project);
 		}
@@ -91,10 +92,10 @@ namespace Open_Rails_Triage
 
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var commitMessagesConfig = gitConfig.GetSection("commitMessages");
-			var forms = commitMessagesConfig.GetSection("expectedForms").GetChildren();
+			var forms = GetConfigPatternMatchers(commitMessagesConfig.GetSection("expectedForms"));
 			foreach (var commit in commits)
 			{
-				if (!forms.Any(form => Regex.IsMatch(commit.Message, form.Value, RegexOptions.IgnoreCase)))
+				if (!forms.Any(pattern => pattern(commit.Message)))
 				{
 					Console.WriteLine(
 						$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
@@ -103,6 +104,218 @@ namespace Open_Rails_Triage
 					Console.WriteLine();
 				}
 			}
+		}
+
+		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config)
+		{
+			Console.WriteLine("Bug triage");
+			Console.WriteLine("==========");
+			Console.WriteLine();
+
+			var bugsConfig = config.GetSection("bugs");
+			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
+
+			foreach (var bugTask in await project.GetRecentBugTasks())
+			{
+				var bug = await bugTask.GetBug();
+				var milestone = await bugTask.GetMilestone();
+				var attachments = await bug.GetAttachments();
+				var attachmentLogs = await Task.WhenAll(attachments
+					.Where(attachment => attachment.Type != Launchpad.Type.Patch
+						&& scanAttachments.Any(pattern => pattern(attachment.Name)))
+					.Select(async attachment => await attachment.GetData()));
+
+				var issues = new List<string>();
+
+				var idealTitles = new List<string>();
+				if (bugsConfig["scanDescriptions"] == "True")
+				{
+					foreach (var message in await bug.GetMessages())
+					{
+						var idealTitle = GetBugIdealTitle(bugsConfig.GetSection("idealTitle"), message.Description);
+						if (idealTitle.Length > 0)
+						{
+							idealTitles.Add(idealTitle);
+						}
+					}
+				}
+				foreach (var attachmentLog in attachmentLogs)
+				{
+					var idealTitle = GetBugIdealTitle(bugsConfig.GetSection("idealTitle"), attachmentLog);
+					if (idealTitle.Length > 0)
+					{
+						idealTitles.Add(idealTitle);
+					}
+				}
+				var idealTagsTitle = bug.Name;
+				if (idealTitles.Count >= 1)
+				{
+					if (!bug.Name.Contains(idealTitles[0]))
+					{
+						issues.Add($"Ideal title: {idealTitles[0]}");
+						idealTagsTitle = idealTitles[0];
+					}
+				}
+
+				var allIdealTags = new SortedSet<string>();
+				foreach (var idealTagConfig in bugsConfig.GetSection("idealTags").GetChildren())
+				{
+					if (Regex.IsMatch(idealTagsTitle, idealTagConfig.Key))
+					{
+						var knownTags = new SortedSet<string>();
+						foreach (var knownTag in idealTagConfig["knownTags"].Split(' '))
+						{
+							knownTags.Add(knownTag);
+						}
+
+						var idealTags = GetBugIdealTags(idealTagConfig, idealTagsTitle);
+						allIdealTags.UnionWith(idealTags);
+
+						foreach (var tag in idealTags.Where(tag => !bug.Tags.Contains(tag)))
+						{
+							issues.Add($"Missing known tag {tag}");
+						}
+						foreach (var tag in knownTags.Where(tag => bug.Tags.Contains(tag) && !idealTags.Contains(tag)))
+						{
+							issues.Add($"Extra known tag {tag}");
+						}
+					}
+				}
+
+				foreach (var idealStatusConfig in bugsConfig.GetSection("idealStatus").GetChildren())
+				{
+					var statusMatch = IsValuePresentMissing(idealStatusConfig.GetSection("status"), bugTask.Status.ToString());
+					var tagsMatch = IsValuePresentMissing(idealStatusConfig.GetSection("tags"), allIdealTags.ToArray());
+					if (statusMatch && tagsMatch && bugTask.Status.ToString() != idealStatusConfig.Key)
+					{
+						issues.Add($"Status should be {idealStatusConfig.Key}");
+					}
+				}
+
+				if (issues.Count > 0)
+				{
+					Console.WriteLine(
+						$"- [{bug.Name} ({String.Join(", ", bug.Tags)})]({bugTask.Json.web_link})\n" +
+						$"  - **Status:** {bugTask.Status}, {bugTask.Importance}, {milestone?.Name}\n" +
+						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
+					);
+					Console.WriteLine();
+				}
+			}
+		}
+
+		static string GetBugIdealTitle(IConfigurationSection config, string log)
+		{
+			var versionPattern = new Regex(config["version"]);
+			var routePattern = new Regex(config["route"]);
+			var activityPattern = new Regex(config["activity"]);
+			var errorPattern = new Regex(config["error"]);
+			var exceptionPattern = new Regex(config["exception"]);
+			var stackPattern = new Regex(config["stack"]);
+
+			var lines = log.Split('\r', '\n');
+
+			// Find the first error match, or first warning match if no errors.
+			var errorLineIndex = -1;
+			for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+			{
+				if (errorPattern.IsMatch(lines[lineIndex]))
+				{
+					errorLineIndex = lineIndex;
+					break;
+				}
+			}
+			if (errorLineIndex == -1)
+			{
+				return "";
+			}
+
+			var exceptionMatch = exceptionPattern.Match(lines[errorLineIndex]);
+			var idealTitle = exceptionMatch.Groups[1].Value;
+
+			// Find a good stack trace line to use as the source location
+			var maxStackLines = uint.Parse(config["maxStackLines"]);
+			for (var lineIndex = errorLineIndex + 1; lineIndex < errorLineIndex + maxStackLines && lineIndex < lines.Length; lineIndex++)
+			{
+				var match = stackPattern.Match(lines[lineIndex]);
+				if (match.Success)
+				{
+					idealTitle += " at " + match.Groups[1].Value;
+					break;
+				}
+			}
+
+			// Exclude some known non-issues
+			if (config.GetSection("excludes")[idealTitle] != null)
+			{
+				return "";
+			}
+
+			// Look for common metadata about the run
+			var meta = new List<string>();
+			for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+			{
+				var versionMatch = versionPattern.Match(lines[lineIndex]);
+				if (versionMatch.Success)
+				{
+					meta.Add(versionMatch.Groups[1].Value);
+				}
+
+				var routeMatch = routePattern.Match(lines[lineIndex]);
+				if (routeMatch.Success)
+				{
+					meta.Add(routeMatch.Groups[1].Value);
+				}
+
+				var activityMatch = activityPattern.Match(lines[lineIndex]);
+				if (activityMatch.Success)
+				{
+					meta.Add(activityMatch.Groups[1].Value);
+				}
+			}
+			if (meta.Count > 0)
+			{
+				if (idealTitle.Length > 0)
+				{
+					idealTitle = $"{idealTitle} ({String.Join(", ", meta)}";
+				}
+				else
+				{
+					idealTitle = String.Join(", ", meta);
+				}
+			}
+
+			return idealTitle;
+		}
+
+		static SortedSet<string> GetBugIdealTags(IConfigurationSection config, string title)
+		{
+			var tags = new SortedSet<string>();
+
+			foreach (var tag in config.GetChildren())
+			{
+				if (IsValuePatternMatch(title, tag))
+				{
+					var matchesException = false;
+					foreach (var exceptionTag in tag.GetSection("exceptions").GetChildren())
+					{
+						if (IsValuePatternMatch(title, exceptionTag))
+						{
+							tags.Add(exceptionTag.Key.Replace("a-", "").Replace("z-", ""));
+							matchesException = true;
+							break;
+						}
+					}
+					if (!matchesException)
+					{
+						tags.Add(tag.Key.Replace("a-", "").Replace("z-", ""));
+					}
+				}
+			}
+
+			tags.RemoveWhere(tag => tag.Length == 0);
+
+			return tags;
 		}
 
 		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
@@ -247,6 +460,72 @@ namespace Open_Rails_Triage
 					Console.WriteLine();
 				}
 			}
+		}
+
+		static IEnumerable<Func<string, bool>> GetConfigPatternMatchers(IConfigurationSection config)
+		{
+			var patterns = config.GetChildren()
+				.Select(pattern => new Regex(pattern.Value, RegexOptions.IgnoreCase))
+				.ToList();
+
+			return patterns.Select<Regex, Func<string, bool>>(pattern => test => pattern.IsMatch(test));
+		}
+
+		static bool IsValuePatternMatch(string value, IConfigurationSection config)
+		{
+			if (config.Value == "True")
+			{
+				return true;
+			}
+			foreach (var subConfig in config.GetChildren())
+			{
+				if (subConfig.Value != null && value.Contains(subConfig.Value))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		static bool IsValuePresentMissing(IConfigurationSection config, params string[] values)
+		{
+			if (config["allPresent"] != null)
+			{
+				var allPresent = config["allPresent"].Split(' ');
+				if (allPresent.Any(value => !values.Contains(value)))
+				{
+					return false;
+				}
+			}
+
+			if (config["anyPresent"] != null)
+			{
+				var anyPresent = config["anyPresent"].Split(' ');
+				if (!anyPresent.Any(value => values.Contains(value)))
+				{
+					return false;
+				}
+			}
+
+			if (config["allMissing"] != null)
+			{
+				var allMissing = config["allMissing"].Split(' ');
+				if (allMissing.Any(value => values.Contains(value)))
+				{
+					return false;
+				}
+			}
+
+			if (config["anyMissing"] != null)
+			{
+				var anyMissing = config["anyMissing"].Split(' ');
+				if (!anyMissing.Any(value => !values.Contains(value)))
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 	}
 }

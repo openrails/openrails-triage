@@ -18,6 +18,10 @@ namespace Open_Rails_Triage.Launchpad
 		Dictionary<string, List<BugTask>> BugTaskCollections = new Dictionary<string, List<BugTask>>();
 		Dictionary<string, BugTask> BugTasks = new Dictionary<string, BugTask>();
 		Dictionary<string, Bug> Bugs = new Dictionary<string, Bug>();
+		Dictionary<string, List<Message>> MessageCollections = new Dictionary<string, List<Message>>();
+		Dictionary<string, Message> Messages = new Dictionary<string, Message>();
+		Dictionary<string, List<Attachment>> AttachmentCollections = new Dictionary<string, List<Attachment>>();
+		Dictionary<string, Attachment> Attachments = new Dictionary<string, Attachment>();
 
 		internal async Task<T> Get<T>(string url)
 		{
@@ -122,6 +126,68 @@ namespace Open_Rails_Triage.Launchpad
 			if (!Bugs.ContainsKey(url))
 				Bugs[url] = new Bug(this, await Get<JsonBug>(url));
 			return Bugs[url];
+		}
+
+		public async Task<List<Message>> GetMessageCollection(string url)
+		{
+			if (!MessageCollections.ContainsKey(url))
+			{
+				var collection = new List<Message>();
+				var json = new JsonMessageCollection(url);
+				do
+				{
+					json = await Get<JsonMessageCollection>(json.next_collection_link);
+					collection.AddRange(json.entries.Select(Message => FromJson(Message)));
+				} while (json.next_collection_link != null);
+				MessageCollections[url] = collection;
+			}
+			return MessageCollections[url];
+		}
+
+		public async Task<Message> GetMessage(string url)
+		{
+			if (!Messages.ContainsKey(url))
+				Messages[url] = new Message(this, await Get<JsonMessage>(url));
+			return Messages[url];
+		}
+
+		internal Message FromJson(JsonMessage json)
+		{
+			return Messages[json.self_link] = new Message(this, json);
+		}
+
+		public async Task<List<Attachment>> GetAttachmentCollection(string url)
+		{
+			if (!AttachmentCollections.ContainsKey(url))
+			{
+				var collection = new List<Attachment>();
+				var json = new JsonAttachmentCollection(url);
+				do
+				{
+					json = await Get<JsonAttachmentCollection>(json.next_collection_link);
+					collection.AddRange(json.entries.Select(Attachment => FromJson(Attachment)));
+				} while (json.next_collection_link != null);
+				AttachmentCollections[url] = collection;
+			}
+			return AttachmentCollections[url];
+		}
+
+		public async Task<Attachment> GetAttachment(string url)
+		{
+			if (!Attachments.ContainsKey(url))
+				Attachments[url] = new Attachment(this, await Get<JsonAttachment>(url));
+			return Attachments[url];
+		}
+
+		internal Attachment FromJson(JsonAttachment json)
+		{
+			return Attachments[json.self_link] = new Attachment(this, json);
+		}
+
+		public async Task<string> GetAttachmentData(string url)
+		{
+			var response = await Client.GetAsync(url);
+			return await response.Content.ReadAsStringAsync();
 		}
 	}
 }

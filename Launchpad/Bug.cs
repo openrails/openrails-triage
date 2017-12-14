@@ -20,6 +20,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string description;
 		public DateTimeOffset date_created;
 		public string[] tags;
+		public string messages_collection_link;
+		public string attachments_collection_link;
 		public string web_link;
 	}
 
@@ -31,6 +33,8 @@ namespace Open_Rails_Triage.Launchpad
 		public string Description => Json.description;
 		public DateTimeOffset Created => Json.date_created;
 		public IReadOnlyList<string> Tags => Json.tags;
+		public async Task<List<Message>> GetMessages() => await Cache.GetMessageCollection(Json.messages_collection_link);
+		public async Task<List<Attachment>> GetAttachments() => await Cache.GetAttachmentCollection(Json.attachments_collection_link);
 
 		internal readonly Cache Cache;
 		internal readonly JsonBug Json;
