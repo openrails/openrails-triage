@@ -57,7 +57,7 @@ namespace Open_Rails_Triage
 
 			CommitLog(commits, gitConfig);
 			CommitTriage(commits, gitConfig);
-			await BugTriage(project, launchpadConfig);
+			await BugTriage(project, launchpadConfig, launchpadCommits);
 			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
 			await SpecificationApprovals(project);
 		}
@@ -106,7 +106,7 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config)
+		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
 		{
 			Console.WriteLine("Bug triage");
 			Console.WriteLine("==========");
@@ -114,6 +114,8 @@ namespace Open_Rails_Triage
 
 			var bugsConfig = config.GetSection("bugs");
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
+			var commitReferencesConfig = config.GetSection("commits").GetSection("references");
+			var commitReferencesSource = GetConfigPatternValueMatchers(commitReferencesConfig.GetSection("source"));
 
 			foreach (var bugTask in await project.GetRecentBugTasks())
 			{
@@ -189,6 +191,40 @@ namespace Open_Rails_Triage
 					if (statusMatch && tagsMatch && bugTask.Status.ToString() != idealStatusConfig.Key)
 					{
 						issues.Add($"Status should be {idealStatusConfig.Key}");
+					}
+				}
+
+				var commitMentions = commits.Where(commit => commit.Message.Contains(bugTask.Json.web_link));
+				foreach (var message in await bug.GetMessages())
+				{
+					foreach (var referenceSource in commitReferencesSource)
+					{
+						var match = referenceSource(message.Description);
+						if (match != "")
+						{
+							var target = commitReferencesConfig["target"].Replace("%1", match);
+							commitMentions = commitMentions.Union(commits.Where(commit => commit.Message.Contains(target)));
+						}
+					}
+				}
+				if (commitMentions.Any())
+				{
+					if (bugTask.Status < Status.InProgress)
+					{
+						issues.Add("Code was committed but bug is not in progress or fixed");
+					}
+					var latestCommit = commitMentions.OrderBy(commit => commit.AuthorDate).Last();
+					if ((DateTimeOffset.Now - latestCommit.AuthorDate).TotalDays > 28
+						&& bugTask.Status < Status.FixCommitted)
+					{
+						issues.Add("Code was committed exclusively more than 28 days ago but bug is not fixed");
+					}
+				}
+				else
+				{
+					if (bugTask.Status >= Status.FixCommitted)
+					{
+						issues.Add("No code was committed but bug is fixed");
 					}
 				}
 
@@ -469,6 +505,15 @@ namespace Open_Rails_Triage
 				.ToList();
 
 			return patterns.Select<Regex, Func<string, bool>>(pattern => test => pattern.IsMatch(test));
+		}
+
+		static IEnumerable<Func<string, string>> GetConfigPatternValueMatchers(IConfigurationSection config)
+		{
+			var patterns = config.GetChildren()
+				.Select(pattern => new Regex(pattern.Value, RegexOptions.IgnoreCase))
+				.ToList();
+
+			return patterns.Select<Regex, Func<string, string>>(pattern => test => pattern.Match(test)?.Groups?[1].Value);
 		}
 
 		static bool IsValuePatternMatch(string value, IConfigurationSection config)
