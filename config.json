@@ -1,0 +1,148 @@
+{
+	"git": {
+		"projectUrl": "https://git.launchpad.net/~twpol/or/+git/or-svn",
+		"webUrl": {
+			"commit": "https://git.launchpad.net/~twpol/or/+git/or-svn/commit/?id=%KEY%"
+		},
+		"branch": "master",
+		"commitMessages": {
+			"expectedForms": {
+				"1": "/\\+bug/",
+				"2": "bug #?\\d+",
+				"3": "/\\+spec/",
+				"4": "^Revert \".*\"$",
+				"5": "\\bmanual\\b",
+				"6": "\\blocales?\\b",
+				"7": "\\bwebsite\\b"
+			},
+			"error": "Missing expected link to bug or specification"
+		}
+	},
+	"launchpad": {
+		"projectUrl": "https://api.launchpad.net/devel/or",
+		"links": {
+			"discussion": {
+				"startDate": "2015-09-20T00:00:00Z",
+				"baseUrl": "http://www.elvastower.com/forums/index.php?/topic/",
+				"expectedForms": {
+					"1": "Discussion: http://www.elvastower.com/forums/index.php?/topic/",
+					"2": "Discussion (developers only): http://www.elvastower.com/forums/index.php?/topic/"
+				}
+			},
+			"roadmap": {
+				"startDate": "2015-09-20T00:00:00Z",
+				"startMilestone": "1.2",
+				"baseUrl": "https://trello.com/c/",
+				"expectedForms": {
+					"1": "Roadmap: https://trello.com/c/"
+				}
+			}
+		},
+		"commits": {
+			"startDate": "2017-01-22T21:43:25Z",
+			"currentMilestone": "1.3",
+			"references": {
+				"source": {
+					"1": "\\b#(\\d{4})\\b",
+					"2": "(?<!Version\\s+=\\s+)X(\\d{4})\\b",
+					"3": "\\bx\\.(\\d{4})\\b"
+				},
+				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
+			}
+		},
+		"bugs": {
+			"scanDescriptions": true,
+			"scanAttachments": {
+				"1": "log"
+			},
+			"idealTitle": {
+				"version": "^Version\\s+=\\s+(X\\d+|[\\.\\d]+)\\s*$",
+				"route": "^Route\\s+=\\s+(.*?)\\s*$",
+				"activity": "^Activity\\s+=\\s+(.*?)\\s+\\(.*\\)$",
+				"error": "^Error: (.*)$",
+				"exception": "^(?:Error|Warning): (?:System\\.IO\\.FileLoadException: .* ---> )?([\\.\\w]+Exception): (.*)$",
+				"stack": "^   (?:.*?) ((?:MSTS(?!\\.Parsers\\.STFReader)|ORTS|Orts(?!\\.Parsers\\.Msts\\.STFReader)|LibAE|ActivityEditor|AEWizard|DataCollector|DataValidator|Updater)\\.[\\.\\w\\<\\>\\[\\]]+)\\(",
+				"maxStackLines": 25,
+				"excludes": {
+					"System.NullReferenceException at ORTS.Processes.UpdaterProcess.Update": true,
+					"System.NullReferenceException at Orts.Viewer3D.Processes.UpdaterProcess.Update": true
+				}
+			},
+			"idealTags": {
+				"Exception at ": {
+					"knownTags": "at cameras content crash graphics menu multiplayer physics signals sounds timetable",
+					"ai": {
+						"1": "Exception at ORTS.AI",
+						"2": "Exception at Orts.Simulation.AIs."
+					},
+					"content": {
+						"1": "MSTS.Parsers.STFException at ",
+						"2": "Orts.Parsers.Msts.STFException at ",
+						"3": "System.IO.InvalidDataException at ORTS.",
+						"4": "System.IO.InvalidDataException at Orts.",
+						"5": "Exception at MSTS.",
+						"6": "Exception at Orts.Formats.",
+						"7": "Exception at Orts.Parsers."
+					},
+					"crash": true,
+					"graphics": {
+						"1": "Exception at MSTS.ACEFile.",
+						"2": "Exception at ORTS.SuperElevation",
+						"3": "Exception at ORTS.Viewer3D.",
+						"4": "Exception at Orts.Viewer3D.",
+						"exceptions": {
+							"cameras": {
+								"1": "Camera"
+							},
+							"sounds": {
+								"1": "OpenAL",
+								"2": "Sound",
+								"3": "WaveFile"
+							},
+							"z-": {
+								"1": "Processes"
+							}
+						}
+					},
+					"menu": {
+						"1": "Exception at ORTS.Menu."
+					},
+					"multiplayer": {
+						"1": "Exception at ORTS.MultiPlayer.",
+						"2": "Exception at Orts.MultiPlayer."
+					},
+					"physics": {
+						"1": "Exception at Orts.Simulation.Physics.",
+						"2": "Exception at Orts.Simulation.RollingStocks."
+					},
+					"signals": {
+						"1": "Exception at ORTS.Signal",
+						"2": "Exception at ORTS.Deadlock",
+						"3": "Exception at ORTS.TrackCircuit",
+						"4": "Exception at ORTS.Signals.",
+						"5": "Exception at Orts.Simulation.Signalling."
+					},
+					"timetable": {
+						"1": "Exception at Orts.Simulation.Timetables."
+					}
+				}
+			},
+			"idealStatus": {
+				"Triaged": {
+					"status": {
+						"anyPresent": "New Confirmed"
+					},
+					"tags": {
+						"allPresent": "crash",
+						"allMissing": "content"
+					}
+				},
+				"Invalid": {
+					"tags": {
+						"allPresent": "crash content"
+					}
+				}
+			}
+		}
+	}
+}
