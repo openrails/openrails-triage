@@ -70,7 +70,7 @@
 			},
 			"idealTags": {
 				"Exception at ": {
-					"knownTags": "at cameras content crash graphics menu multiplayer physics signals sounds timetable",
+					"knownTags": "ai cameras content crash graphics menu multiplayer physics signals sounds timetable",
 					"ai": {
 						"1": "Exception at ORTS.AI",
 						"2": "Exception at Orts.Simulation.AIs."
