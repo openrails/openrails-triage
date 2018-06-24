@@ -238,6 +238,15 @@ namespace Open_Rails_Triage
 
 				var issues = new List<string>();
 
+				if (bugTask.Status == Status.InProgress && !bugTask.HasAssignee)
+				{
+					issues.Add("No assignee set but bug is in progress");
+				}
+				else if (bugTask.Status >= Status.FixCommitted && !bugTask.HasAssignee)
+				{
+					issues.Add("No assignee set but bug is fixed");
+				}
+
 				if (bugTask.Status >= Status.FixCommitted && milestone == null)
 				{
 					issues.Add("No milestone set but bug is fixed");
