@@ -228,15 +228,35 @@ namespace Open_Rails_Triage
 					}
 				}
 
-				if (issues.Count > 0)
+				WriteBugIssues(bugTask, bug, milestone, issues);
+			}
+
+			foreach (var bugTask in await project.GetUnreleasedBugTasks())
+			{
+				var bug = await bugTask.GetBug();
+				var milestone = await bugTask.GetMilestone();
+
+				var issues = new List<string>();
+
+				if (bugTask.Status >= Status.FixCommitted && milestone == null)
 				{
-					Console.WriteLine(
-						$"- [{bug.Name} ({String.Join(", ", bug.Tags)})]({bugTask.Json.web_link})\n" +
-						$"  - **Status:** {bugTask.Status}, {bugTask.Importance}, {milestone?.Name}\n" +
-						String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
-					);
-					Console.WriteLine();
+					issues.Add("No milestone set but bug is fixed");
 				}
+
+				WriteBugIssues(bugTask, bug, milestone, issues);
+			}
+		}
+
+		static void WriteBugIssues(BugTask bugTask, Bug bug, Milestone milestone, List<string> issues)
+		{
+			if (issues.Count > 0)
+			{
+				Console.WriteLine(
+					$"- [{bug.Name} ({String.Join(", ", bug.Tags)})]({bugTask.Json.web_link})\n" +
+					$"  - **Status:** {bugTask.Status}, {bugTask.Importance}, {milestone?.Name}\n" +
+					String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
+				);
+				Console.WriteLine();
 			}
 		}
 
