@@ -85,6 +85,9 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "Code was committed but bug is not in progress or fixed"
 * "Code was committed exclusively more than 28 days ago but bug is not fixed"
 * "No code was committed but bug is fixed"
+* "No assignee set but bug is in progress"
+* "No assignee set but bug is fixed"
+* "No milestone set but bug is fixed"
 
 ## Blueprint triage
 
