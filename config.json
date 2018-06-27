@@ -43,9 +43,7 @@
 			"currentMilestone": "1.3",
 			"references": {
 				"source": {
-					"1": "\\b#(\\d{4})\\b",
-					"2": "(?<!Version\\s+=\\s+)X(\\d{4})\\b",
-					"3": "\\bx\\.(\\d{4})\\b"
+					"1": "fixed in (?:#|X\\.?)(\\d{4})\\b"
 				},
 				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
 			}
