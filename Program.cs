@@ -114,7 +114,7 @@ namespace Open_Rails_Triage
 
 			var bugsConfig = config.GetSection("bugs");
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
-			var commitReferencesConfig = config.GetSection("commits").GetSection("references");
+			var commitReferencesConfig = config.GetSection("commits").GetSection("bugReferences");
 			var commitReferencesSource = GetConfigPatternValueMatchers(commitReferencesConfig.GetSection("source"));
 
 			foreach (var bugTask in await project.GetRecentBugTasks())
@@ -390,7 +390,7 @@ namespace Open_Rails_Triage
 			Console.WriteLine();
 
 			var commitsConfig = config.GetSection("commits");
-			var commitReferencesConfig = commitsConfig.GetSection("references");
+			var commitReferencesConfig = commitsConfig.GetSection("specificationReferences");
 			var commitReferencesSource = commitReferencesConfig.GetSection("source").GetChildren();
 
 			foreach (var specification in await project.GetSpecifications())
