@@ -424,7 +424,7 @@ namespace Open_Rails_Triage
 						}
 						else if (!forms.Any(form => specification.Summary.Contains(form.Value)))
 						{
-							issues.Add($"Definition is approved not no normal {link.Key} link is found");
+							issues.Add($"Definition is approved but no normal {link.Key} link is found");
 						}
 					}
 				}
