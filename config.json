@@ -64,7 +64,7 @@
 				"route": "^Route\\s+=\\s+(.*?)\\s*$",
 				"activity": "^Activity\\s+=\\s+(.*?)\\s+\\(.*\\)$",
 				"error": "^Error: (.*)$",
-				"exception": "^(?:Error|Warning): (?:System\\.IO\\.FileLoadException: .* ---> )?([\\.\\w]+Exception): (.*)$",
+				"exception": "^(?:Error|Warning): (?:System\\.IO\\.FileLoadException: .* ---> )?([\\.\\w]+Exception)(?: \\(0x[0-9A-F]{8}\\))?: .*$",
 				"stack": "^   (?:.*?) ((?:MSTS(?!\\.Parsers\\.STFReader)|ORTS|Orts(?!\\.Parsers\\.Msts\\.STFReader)|LibAE|ActivityEditor|AEWizard|DataCollector|DataValidator|Updater)\\.[\\.\\w\\<\\>\\[\\]]+)\\(",
 				"maxStackLines": 25,
 				"excludes": {
