@@ -29,6 +29,7 @@ namespace Open_Rails_Triage.Launchpad
 	{
 		public string Name => Json.subject;
 		public string Description => Json.content;
+		public DateTimeOffset Created => Json.date_created;
 
 		internal readonly Cache Cache;
 		internal readonly JsonMessage Json;

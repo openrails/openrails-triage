@@ -18,6 +18,7 @@ namespace Open_Rails_Triage.Launchpad
 		public string self_link;
 		public string title;
 		public DateTimeOffset date_created;
+		public DateTimeOffset? date_incomplete;
 		public string status;
 		public string importance;
 		public string assignee_link;
@@ -85,6 +86,7 @@ namespace Open_Rails_Triage.Launchpad
 
 		public string Name => Json.title;
 		public DateTimeOffset Created => Json.date_created;
+		public DateTimeOffset Incomplete => Json.date_incomplete ?? DateTimeOffset.MinValue;
 		public Status Status => StatusMapping[Json.status];
 		public Importance Importance => ImportanceMapping[Json.importance];
 		public bool HasAssignee => Json.assignee_link != null;

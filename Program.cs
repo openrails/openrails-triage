@@ -254,6 +254,27 @@ namespace Open_Rails_Triage
 
 				WriteBugIssues(bugTask, bug, milestone, issues);
 			}
+
+			foreach (var bugTask in await project.GetIncompleteBugTasks())
+			{
+				var bug = await bugTask.GetBug();
+				var milestone = await bugTask.GetMilestone();
+				var messages = await bug.GetMessages();
+
+				var issues = new List<string>();
+
+				var incompleteMessages = messages.Where(m => m.Created >= bugTask.Incomplete).ToList();
+				if (incompleteMessages.Count > 0)
+				{
+					var diff = incompleteMessages[0].Created - bugTask.Incomplete;
+					if (diff.TotalMinutes >= 1)
+					{
+						issues.Add($"{incompleteMessages.Count} messages added {(diff.TotalMinutes):N0} minutes after incomplete status was set");
+					}
+				}
+
+				WriteBugIssues(bugTask, bug, milestone, issues);
+			}
 		}
 
 		static void WriteBugIssues(BugTask bugTask, Bug bug, Milestone milestone, List<string> issues)
