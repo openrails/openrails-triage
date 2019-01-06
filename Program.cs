@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -434,8 +434,8 @@ namespace Open_Rails_Triage
 					var hasStartDate = DateTimeOffset.TryParse(link["startDate"] ?? "", out var startDate);
 					var startMilestone = link["startMilestone"];
 					var forms = link.GetSection("expectedForms").GetChildren();
-					if ((!hasStartDate || specification.Created > startDate)
-						&& (milestone == null || startMilestone == null || string.Compare(milestone.Id, startMilestone) > 0)
+					if ((!hasStartDate || specification.Created >= startDate)
+						&& (milestone == null || startMilestone == null || string.Compare(milestone.Id, startMilestone) >= 0)
 						&& specification.Definition == Definition.Approved
 						&& specification.Implementation != Implementation.Informational)
 					{
