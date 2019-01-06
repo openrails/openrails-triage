@@ -11,9 +11,7 @@
 				"2": "bug #?\\d+",
 				"3": "/\\+spec/",
 				"4": "^Revert \".*\"$",
-				"5": "\\bmanual\\b",
-				"6": "\\blocales?\\b",
-				"7": "\\bwebsite\\b"
+				"5": "\\b(contrib|manual|locales?|build|release|website)\\b"
 			},
 			"error": "Missing expected link to bug or specification"
 		}
