@@ -30,6 +30,7 @@ namespace Open_Rails_Triage.Launchpad
 		public string Name => Json.subject;
 		public string Description => Json.content;
 		public DateTimeOffset Created => Json.date_created;
+		public async Task<Person> GetOwner() => await Cache.GetPerson(Json.owner_link);
 
 		internal readonly Cache Cache;
 		internal readonly JsonMessage Json;

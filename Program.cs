@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -266,10 +266,13 @@ namespace Open_Rails_Triage
 				var incompleteMessages = messages.Where(m => m.Created >= bugTask.Incomplete).ToList();
 				if (incompleteMessages.Count > 0)
 				{
-					var diff = incompleteMessages[0].Created - bugTask.Incomplete;
+					var lastMessage = incompleteMessages.Last();
+					var diff = lastMessage.Created - bugTask.Incomplete;
 					if (diff.TotalMinutes >= 1)
 					{
-						issues.Add($"{incompleteMessages.Count} messages added {(diff.TotalMinutes):N0} minutes after incomplete status was set");
+						var lastMessageUser = await lastMessage.GetOwner();
+						var lastMessageAge = DateTimeOffset.Now - lastMessage.Created;
+						issues.Add($"{incompleteMessages.Count} messages added since incomplete status was set; last message was by {lastMessageUser.Name}, {lastMessageAge.TotalDays:N1} days ago");
 					}
 				}
 

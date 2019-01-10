@@ -22,6 +22,7 @@ namespace Open_Rails_Triage.Launchpad
 		Dictionary<string, Message> Messages = new Dictionary<string, Message>();
 		Dictionary<string, List<Attachment>> AttachmentCollections = new Dictionary<string, List<Attachment>>();
 		Dictionary<string, Attachment> Attachments = new Dictionary<string, Attachment>();
+		Dictionary<string, Person> Persons = new Dictionary<string, Person>();
 
 		internal async Task<T> Get<T>(string url)
 		{
@@ -188,6 +189,13 @@ namespace Open_Rails_Triage.Launchpad
 		{
 			var response = await Client.GetAsync(url);
 			return await response.Content.ReadAsStringAsync();
+		}
+
+		public async Task<Person> GetPerson(string url)
+		{
+			if (!Persons.ContainsKey(url))
+				Persons[url] = new Person(this, await Get<JsonPerson>(url));
+			return Persons[url];
 		}
 	}
 }
