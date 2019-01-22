@@ -1,8 +1,8 @@
 {
 	"git": {
-		"projectUrl": "https://git.launchpad.net/~twpol/or/+git/or-svn",
+		"projectUrl": "https://git.launchpad.net/or",
 		"webUrl": {
-			"commit": "https://git.launchpad.net/~twpol/or/+git/or-svn/commit/?id=%KEY%"
+			"commit": "https://git.launchpad.net/or/commit/?id=%KEY%"
 		},
 		"branch": "master",
 		"commitMessages": {
