@@ -31,7 +31,15 @@ namespace Open_Rails_Triage.Git
 
 		public List<Commit> GetLog(string branch, DateTimeOffset since)
 		{
-			return Commit.Parse(GetCommandOutput($"rev-list --header --since={since.ToUnixTimeSeconds()} {branch}"));
+			var commits = Commit.Parse(GetCommandOutput($"rev-list --first-parent --header --since={since.ToUnixTimeSeconds()} {branch}"));
+			commits.ForEach(commit => {
+				commit.Commits.Clear();
+				if (commit.ParentKeys.Count == 2)
+				{
+					commit.Commits.AddRange(Commit.Parse(GetCommandOutput($"rev-list --header {commit.ParentKeys[0]}..{commit.ParentKeys[1]}")));
+				}
+			});
+			return commits;
 		}
 
 		void RunCommand(string command)

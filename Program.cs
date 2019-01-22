@@ -80,6 +80,12 @@ namespace Open_Rails_Triage
 				Console.WriteLine(
 					$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}"
 				);
+				foreach (var subCommit in commit.Commits)
+				{
+					Console.WriteLine(
+						$"  - [{subCommit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", subCommit.Key)}) **at** {subCommit.AuthorDate} **by** {subCommit.AuthorName}"
+					);
+				}
 				Console.WriteLine();
 			}
 		}

@@ -9,6 +9,7 @@ namespace Open_Rails_Triage.Git
 	public class Commit
 	{
 		public string Key { get; private set; }
+		public List<string> ParentKeys { get; } = new List<string>();
 		public string AuthorName { get; private set; }
 		public string AuthorEmail { get; private set; }
 		public DateTimeOffset AuthorDate { get; private set; }
@@ -17,6 +18,7 @@ namespace Open_Rails_Triage.Git
 		public DateTimeOffset CommitterDate { get; private set; }
 		public string Message { get; private set; }
 		public string Summary => Message.Split('\n')[0];
+		public List<Commit> Commits { get; } = new List<Commit>();
 
 		internal Commit(string key) => (Key, Message) = (key, "");
 
@@ -30,6 +32,10 @@ namespace Open_Rails_Triage.Git
 				{
 					commit = new Commit(line);
 					commits.Add(commit);
+				}
+				else if (line.StartsWith("parent "))
+				{
+					commit.ParentKeys.Add(line.Substring(7));
 				}
 				else if (line.StartsWith("author "))
 				{
