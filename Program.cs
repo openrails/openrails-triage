@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -469,7 +469,8 @@ namespace Open_Rails_Triage
 					issues.Add("Definition is drafting (or later) but drafter is missing");
 				}
 				if (specification.Implementation >= Implementation.Started
-					&& specification.Definition != Definition.Approved)
+					&& specification.Definition != Definition.Approved
+					&& specification.Definition <= Definition.New)
 				{
 					issues.Add("Implementation is started (or later) but definition is not approved");
 				}
@@ -504,7 +505,8 @@ namespace Open_Rails_Triage
 					{
 						issues.Add($"Code was committed but milestone is {milestone.Id} (expected missing/{commitsConfig["currentMilestone"]})");
 					}
-					if (specification.Definition != Definition.Approved)
+					if (specification.Definition != Definition.Approved
+						&& specification.Definition <= Definition.New)
 					{
 						issues.Add("Code was committed but definition is not approved");
 					}
