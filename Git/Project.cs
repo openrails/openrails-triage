@@ -9,10 +9,12 @@ namespace Open_Rails_Triage.Git
 	public class Project
 	{
 		string GitPath;
+		bool Verbose;
 
-		public Project(string gitPath)
+		public Project(string gitPath, bool verbose)
 		{
 			GitPath = gitPath;
+			Verbose = verbose;
 		}
 
 		public void Init(string repository)
@@ -52,8 +54,10 @@ namespace Open_Rails_Triage.Git
 		IEnumerable<string> GetCommandOutput(string command)
 		{
 			var args = $"--no-pager {command}";
-			Console.WriteLine("```shell");
-			Console.WriteLine($"{GitPath}> git {args}");
+			if (Verbose) {
+				Console.WriteLine("```shell");
+				Console.WriteLine($"{GitPath}> git {args}");
+			}
 			var git = Process.Start(new ProcessStartInfo()
 			{
 				WorkingDirectory = GitPath,
@@ -68,7 +72,9 @@ namespace Open_Rails_Triage.Git
 			}
 			git.WaitForExit();
 			Debug.Assert(git.ExitCode == 0, $"git {command} failed: {git.ExitCode}");
-			Console.WriteLine("```");
+			if (Verbose) {
+				Console.WriteLine("```");
+			}
 		}
 	}
 }

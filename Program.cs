@@ -19,10 +19,13 @@ namespace Open_Rails_Triage
 				DefaultValue = new FileInfo("config.json")
 			};
 
+			var verbose = new CommandLineParser.Arguments.SwitchArgument('v', "verbose", false);
+
 			var commandLineParser = new CommandLineParser.CommandLineParser()
 			{
 				Arguments = {
 					config,
+					verbose,
 				}
 			};
 
@@ -32,7 +35,7 @@ namespace Open_Rails_Triage
 
 				AsyncMain(new ConfigurationBuilder()
 					.AddJsonFile(config.Value.FullName, true)
-					.Build()).Wait();
+					.Build(), verbose.Value).Wait();
 			}
 			catch (CommandLineParser.Exceptions.CommandLineException e)
 			{
@@ -40,10 +43,10 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task AsyncMain(IConfigurationRoot config)
+		static async Task AsyncMain(IConfigurationRoot config, bool verbose)
 		{
 			var gitConfig = config.GetSection("git");
-			var git = new Git.Project(GetGitPath());
+			var git = new Git.Project(GetGitPath(), verbose);
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
 			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Now.AddDays(-7));
