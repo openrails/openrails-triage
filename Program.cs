@@ -35,6 +35,7 @@ namespace Open_Rails_Triage
 
 				AsyncMain(new ConfigurationBuilder()
 					.AddJsonFile(config.Value.FullName, true)
+					.AddJsonFile(config.Value.FullName.Replace(".json", "-secret.json"), true)
 					.Build(), verbose.Value).Wait();
 			}
 			catch (CommandLineParser.Exceptions.CommandLineException e)
@@ -63,6 +64,11 @@ namespace Open_Rails_Triage
 			await BugTriage(project, launchpadConfig, launchpadCommits);
 			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
 			await SpecificationApprovals(project);
+
+			var trelloConfig = config.GetSection("trello");
+			var trello = new Trello.Cache(trelloConfig["key"], trelloConfig["token"]);
+			var board = await trello.GetBoard(trelloConfig["board"]);
+			await RoadmapTriage(board, trelloConfig);
 		}
 
 		static string GetGitPath()
@@ -560,6 +566,11 @@ namespace Open_Rails_Triage
 					Console.WriteLine();
 				}
 			}
+		}
+
+		static async Task RoadmapTriage(Trello.Board board, IConfigurationSection config)
+		{
+			// TODO:
 		}
 
 		static IEnumerable<Func<string, bool>> GetConfigPatternMatchers(IConfigurationSection config)
