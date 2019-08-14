@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Trello
 {
@@ -22,6 +23,7 @@ namespace Open_Rails_Triage.Trello
 		public string Name => Json.name;
 		public Uri Uri => Json.url;
 		public Dictionary<string, string> Labels => Json.labelNames;
+		public async Task<List<List>> GetLists() => await Cache.GetListCollection(Json.id);
 
 		internal readonly Cache Cache;
 		internal readonly JsonBoard Json;

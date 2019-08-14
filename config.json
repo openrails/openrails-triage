@@ -148,6 +148,7 @@
 		}
 	},
 	"trello": {
-		"board": "57167c88ac24bececc9eb7ff"
+		"board": "57167c88ac24bececc9eb7ff",
+		"excludeLists": "Unsorted|Not planned|RELEASED"
 	}
 }

@@ -570,7 +570,26 @@ namespace Open_Rails_Triage
 
 		static async Task RoadmapTriage(Trello.Board board, IConfigurationSection config)
 		{
-			// TODO:
+			Console.WriteLine("Roadmap triage");
+			Console.WriteLine("==============");
+			Console.WriteLine();
+
+			var lists = await board.GetLists();
+			if (config["includeLists"] != null)
+			{
+				var filter = new Regex(config["includeLists"]);
+				lists = lists.Where(list => filter.IsMatch(list.Name)).ToList();
+			}
+			if (config["excludeLists"] != null)
+			{
+				var filter = new Regex(config["excludeLists"]);
+				lists = lists.Where(list => !filter.IsMatch(list.Name)).ToList();
+			}
+
+			foreach (var list in lists)
+			{
+				Console.WriteLine($"- {list.Name}");
+			}
 		}
 
 		static IEnumerable<Func<string, bool>> GetConfigPatternMatchers(IConfigurationSection config)
