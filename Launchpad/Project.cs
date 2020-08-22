@@ -28,7 +28,7 @@ namespace Open_Rails_Triage.Launchpad
 		public Task<List<Milestone>> GetActiveMilestones() => Cache.GetMilestoneCollection(Json.active_milestones_collection_link);
 		public Task<List<Specification>> GetSpecifications() => Cache.GetSpecificationCollection(Json.all_specifications_collection_link);
 		public Task<List<Specification>> GetValidSpecifications() => Cache.GetSpecificationCollection(Json.valid_specifications_collection_link);
-		public Task<List<BugTask>> GetRecentBugTasks() => Cache.GetBugTaskCollection(Json.self_link + "?ws.op=searchTasks&status=New&status=Incomplete&status=Opinion&status=Invalid&status=Won't+Fix&status=Expired&status=Confirmed&status=Triaged&status=In+Progress&status=Fix+Committed&status=Fix+Released&modified_since=" + DateTime.UtcNow.AddDays(-7).ToString("s"));
+		public Task<List<BugTask>> GetRecentBugTasks(DateTimeOffset date) => Cache.GetBugTaskCollection(Json.self_link + "?ws.op=searchTasks&status=New&status=Incomplete&status=Opinion&status=Invalid&status=Won't+Fix&status=Expired&status=Confirmed&status=Triaged&status=In+Progress&status=Fix+Committed&status=Fix+Released&modified_since=" + date.ToString("s"));
 		public Task<List<BugTask>> GetUnreleasedBugTasks() => Cache.GetBugTaskCollection(Json.self_link + "?ws.op=searchTasks&status=New&status=Incomplete&status=Opinion&status=Invalid&status=Won't+Fix&status=Expired&status=Confirmed&status=Triaged&status=In+Progress&status=Fix+Committed");
 		public Task<List<BugTask>> GetIncompleteBugTasks() => Cache.GetBugTaskCollection(Json.self_link + "?ws.op=searchTasks&status=Incomplete");
 
