@@ -1,34 +1,35 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Trello
 {
 	#pragma warning disable CS0649
 
-	class JsonList
+	class JsonCard
 	{
 		public string id;
 		public string name;
-		public bool closed;
+		public string desc;
+		public List<string> idMembersVoted;
+		public Uri url;
 		public float pos;
 	}
 
 	#pragma warning restore CS0649
 
 
-	public class List
+	public class Card
 	{
 		public string Id => Json.id;
 		public string Name => Json.name;
-		public bool Closed => Json.closed;
-		public bool Open => !Json.closed;
+		public string Description => Json.desc;
+		public int Votes => Json.idMembersVoted.Count;
+		public Uri Uri => Json.url;
 		public float Position => Json.pos;
-		public async Task<List<Card>> GetCards() => await Cache.GetCardCollection(Json.id);
 
 		internal readonly Cache Cache;
-		internal readonly JsonList Json;
+		internal readonly JsonCard Json;
 
-		internal List(Cache cache, JsonList json) => (Cache, Json) = (cache, json);
+		internal Card(Cache cache, JsonCard json) => (Cache, Json) = (cache, json);
 	}
 }

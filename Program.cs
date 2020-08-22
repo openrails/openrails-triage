@@ -574,21 +574,23 @@ namespace Open_Rails_Triage
 			Console.WriteLine("==============");
 			Console.WriteLine();
 
-			var lists = await board.GetLists();
-			if (config["includeLists"] != null)
-			{
-				var filter = new Regex(config["includeLists"]);
-				lists = lists.Where(list => filter.IsMatch(list.Name)).ToList();
-			}
-			if (config["excludeLists"] != null)
-			{
-				var filter = new Regex(config["excludeLists"]);
-				lists = lists.Where(list => !filter.IsMatch(list.Name)).ToList();
-			}
+			var lists = Filter(await board.GetLists(), list => list.Name, config["includeLists"], config["excludeLists"]);
 
 			foreach (var list in lists)
 			{
 				Console.WriteLine($"- {list.Name}");
+
+				var cards = Filter(await list.GetCards(), card => card.Name, config["includeCards"], config["excludeCards"]);
+				if (config["sorting"] == "votes")
+				{
+					for (var i = 1; i < cards.Count; i++)
+					{
+						if (cards[i].Votes > cards[i - 1].Votes)
+						{
+							Console.WriteLine($"  - [{cards[i].Name}]({cards[i].Uri}): has more votes than card above ({cards[i].Votes} vs {cards[i - 1].Votes})");
+						}
+					}
+				}
 			}
 		}
 
@@ -665,6 +667,21 @@ namespace Open_Rails_Triage
 			}
 
 			return true;
+		}
+
+		static List<T> Filter<T>(List<T> items, Func<T, string> field, string include, string exclude)
+		{
+			if (include != null)
+			{
+				var filter = new Regex(include);
+				items = items.Where(item => filter.IsMatch(field(item))).ToList();
+			}
+			if (exclude != null)
+			{
+				var filter = new Regex(exclude);
+				items = items.Where(item => !filter.IsMatch(field(item))).ToList();
+			}
+			return items;
 		}
 	}
 }

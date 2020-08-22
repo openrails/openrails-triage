@@ -14,6 +14,7 @@ namespace Open_Rails_Triage.Trello
 		readonly HttpClient Client = new HttpClient();
 		readonly Dictionary<string, Board> Boards = new Dictionary<string, Board>();
 		readonly Dictionary<string, List<List>> ListCollections = new Dictionary<string, List<List>>();
+		readonly Dictionary<string, List<Card>> CardCollections = new Dictionary<string, List<Card>>();
 
 		public Cache(string key, string token)
 		{
@@ -44,6 +45,16 @@ namespace Open_Rails_Triage.Trello
 					.Select(json => new List(this, json))
 					.ToList();
 			return ListCollections[url];
+		}
+
+		public async Task<List<Card>> GetCardCollection(string idList)
+		{
+			var url = $"https://api.trello.com/1/lists/{idList}/cards?key={Key}&token={Token}";
+			if (!CardCollections.ContainsKey(url))
+				CardCollections[url] = (await Get<List<JsonCard>>(url))
+					.Select(json => new Card(this, json))
+					.ToList();
+			return CardCollections[url];
 		}
 	}
 }
