@@ -47,25 +47,22 @@ namespace Open_Rails_Triage
 		static async Task AsyncMain(IConfigurationRoot config, bool verbose)
 		{
 			var gitConfig = config.GetSection("git");
+			var launchpadConfig = config.GetSection("launchpad");
+			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
+			var trelloConfig = config.GetSection("trello");
+
 			var git = new Git.Project(GetGitPath(), verbose);
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
-			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Now.AddDays(-7));
-
 			var launchpad = new Launchpad.Cache();
-			var launchpadConfig = config.GetSection("launchpad");
-			var project = await launchpad.GetProject(launchpadConfig["projectUrl"]);
-
-			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
+			var launchpadProject = await launchpad.GetProject(launchpadConfig["projectUrl"]);
 			var launchpadCommits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(launchpadCommitsConfig["startDate"]));
 
-			CommitLog(commits, gitConfig);
-			CommitTriage(commits, gitConfig);
-			await BugTriage(project, launchpadConfig, launchpadCommits);
-			await SpecificationTriage(project, launchpadConfig, launchpadCommits);
-			await SpecificationApprovals(project);
+			CommitTriage(launchpadCommits, gitConfig);
+			await BugTriage(launchpadProject, launchpadConfig, launchpadCommits);
+			await SpecificationTriage(launchpadProject, launchpadConfig, launchpadCommits);
+			await SpecificationApprovals(launchpadProject);
 
-			var trelloConfig = config.GetSection("trello");
 			var trello = new Trello.Cache(trelloConfig["key"], trelloConfig["token"]);
 			var board = await trello.GetBoard(trelloConfig["board"]);
 			await RoadmapTriage(board, trelloConfig);
@@ -75,28 +72,6 @@ namespace Open_Rails_Triage
 		{
 			var appFilePath = System.Reflection.Assembly.GetEntryAssembly().Location;
 			return Path.Combine(Path.GetDirectoryName(appFilePath), "git");
-		}
-
-		static void CommitLog(List<Commit> commits, IConfigurationSection gitConfig)
-		{
-			Console.WriteLine("Commit log");
-			Console.WriteLine("==========");
-			Console.WriteLine();
-
-			var webUrlConfig = gitConfig.GetSection("webUrl");
-			foreach (var commit in commits)
-			{
-				Console.WriteLine(
-					$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}"
-				);
-				foreach (var subCommit in commit.Commits)
-				{
-					Console.WriteLine(
-						$"  - [{subCommit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", subCommit.Key)}) **at** {subCommit.AuthorDate} **by** {subCommit.AuthorName}"
-					);
-				}
-				Console.WriteLine();
-			}
 		}
 
 		static void CommitTriage(List<Commit> commits, IConfigurationSection gitConfig)
@@ -132,7 +107,7 @@ namespace Open_Rails_Triage
 			var commitReferencesConfig = config.GetSection("commits").GetSection("bugReferences");
 			var commitReferencesSource = GetConfigPatternValueMatchers(commitReferencesConfig.GetSection("source"));
 
-			foreach (var bugTask in await project.GetRecentBugTasks())
+			foreach (var bugTask in await project.GetRecentBugTasks(DateTimeOffset.Parse(bugsConfig["startDate"])))
 			{
 				var bug = await bugTask.GetBug();
 				var milestone = await bugTask.GetMilestone();

@@ -37,22 +37,23 @@
 			}
 		},
 		"commits": {
-			"startDate": "2017-01-22T21:43:25Z",
-			"currentMilestone": "1.3",
+			"startDate": "2018-12-09T00:00:00Z",
+			"currentMilestone": "1.4",
 			"bugReferences": {
 				"source": {
-					"1": "fixed in (?:#|X\\.?)(\\d{4})\\b"
+					"1": "fixed in (?:[#Xx]\\.?)(\\d{4})\\b"
 				},
 				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
 			},
 			"specificationReferences": {
 				"source": {
-					"1": "\\b(?:#|X\\.?)(\\d{4})\\b"
+					"1": "\\b(?:[#Xx]\\.?)(\\d{4})\\b"
 				},
 				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
 			}
 		},
 		"bugs": {
+			"startDate": "2018-12-09T00:00:00Z",
 			"scanDescriptions": true,
 			"scanAttachments": {
 				"1": "log"
