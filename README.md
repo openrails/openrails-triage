@@ -104,3 +104,7 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "Code was committed but definition is not approved"
 * "Code was committed exclusively more than 28 days ago but implementation is not complete"
 * "No code was committed but implementation for current milestone is complete"
+
+## Roadmap triage
+
+* "(card): has more votes than card above"
