@@ -152,6 +152,23 @@
 		"board": "57167c88ac24bececc9eb7ff",
 		"excludeLists": "Unsorted|Not planned|RELEASED",
 		"excludeCards": "These cards are currently planned .* - please vote on them",
-		"sorting": "votes"
+		"sorting": "votes",
+		"links": {
+			"discussion": {
+				"includeLists": "^1\\.[2-9]",
+				"baseUrl": "http://www.elvastower.com/forums/index.php?/topic/",
+				"expectedForms": {
+					"1": "**Discussion:** http://www.elvastower.com/forums/index.php?/topic/",
+					"2": "**Discussion (developers only):** http://www.elvastower.com/forums/index.php?/topic/"
+				}
+			},
+			"blueprint": {
+				"includeLists": "^1\\.[2-9]",
+				"baseUrl": "https://blueprints.launchpad.net/or/+spec/",
+				"expectedForms": {
+					"1": "**Blueprint:** https://blueprints.launchpad.net/or/+spec/"
+				}
+			}
+		}
 	}
 }

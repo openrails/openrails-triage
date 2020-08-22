@@ -566,6 +566,25 @@ namespace Open_Rails_Triage
 						}
 					}
 				}
+
+				foreach (var card in cards)
+				{
+					foreach (var link in config.GetSection("links").GetChildren())
+					{
+						if (IsIncluded(list.Name, link["includeLists"], link["excludeLists"]))
+						{
+							var forms = link.GetSection("expectedForms").GetChildren();
+							if (!card.Description.Contains(link["baseUrl"]))
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {link.Key} link is found");
+							}
+							else if (!forms.Any(form => card.Description.Contains(form.Value)))
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no normal {link.Key} link is found");
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -657,6 +676,27 @@ namespace Open_Rails_Triage
 				items = items.Where(item => !filter.IsMatch(field(item))).ToList();
 			}
 			return items;
+		}
+
+		static bool IsIncluded(string value, string include, string exclude)
+		{
+			if (include != null)
+			{
+				var filter = new Regex(include);
+				if (!filter.IsMatch(value))
+				{
+					return false;
+				}
+			}
+			if (exclude != null)
+			{
+				var filter = new Regex(exclude);
+				if (filter.IsMatch(value))
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 }
