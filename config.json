@@ -172,6 +172,11 @@
 		},
 		"labels": {
 			"required": true
+		},
+		"checklists": {
+			"Progress": {
+				"includeLists": "^1\\.[2-9]"
+			}
 		}
 	}
 }

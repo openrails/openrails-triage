@@ -569,30 +569,43 @@ namespace Open_Rails_Triage
 
 				foreach (var card in cards)
 				{
-					foreach (var link in config.GetSection("links").GetChildren())
+					foreach (var linkConfig in config.GetSection("links").GetChildren())
 					{
-						if (IsIncluded(list.Name, link["includeLists"], link["excludeLists"]))
+						if (IsIncluded(list.Name, linkConfig["includeLists"], linkConfig["excludeLists"]))
 						{
-							var forms = link.GetSection("expectedForms").GetChildren();
-							if (!card.Description.Contains(link["baseUrl"]))
+							var forms = linkConfig.GetSection("expectedForms").GetChildren();
+							if (!card.Description.Contains(linkConfig["baseUrl"]))
 							{
-								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {link.Key} link is found");
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {linkConfig.Key} link is found");
 							}
 							else if (!forms.Any(form => card.Description.Contains(form.Value)))
 							{
-								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no normal {link.Key} link is found");
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no normal {linkConfig.Key} link is found");
 							}
 						}
 					}
 
-					var label = config.GetSection("labels");
-					if (IsIncluded(list.Name, label["includeLists"], label["excludeLists"]))
+					var labelConfig = config.GetSection("labels");
+					if (IsIncluded(list.Name, labelConfig["includeLists"], labelConfig["excludeLists"]))
 					{
-						if (label["required"] == "True")
+						if (labelConfig["required"] == "True")
 						{
 							if (card.LabelCount == 0)
 							{
 								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no labels found");
+							}
+						}
+					}
+
+					var checklists = await card.GetChecklists();
+					foreach (var checklistConfig in config.GetSection("checklists").GetChildren())
+					{
+						if (IsIncluded(list.Name, checklistConfig["includeLists"], checklistConfig["excludeLists"]))
+						{
+							var checklist = checklists.Find(item => item.Name == checklistConfig.Key);
+							if (checklist == null)
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {checklistConfig.Key} checklist found");
 							}
 						}
 					}

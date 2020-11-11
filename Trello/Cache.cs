@@ -15,6 +15,7 @@ namespace Open_Rails_Triage.Trello
 		readonly Dictionary<string, Board> Boards = new Dictionary<string, Board>();
 		readonly Dictionary<string, List<List>> ListCollections = new Dictionary<string, List<List>>();
 		readonly Dictionary<string, List<Card>> CardCollections = new Dictionary<string, List<Card>>();
+		readonly Dictionary<string, Checklist> Checklists = new Dictionary<string, Checklist>();
 
 		public Cache(string key, string token)
 		{
@@ -55,6 +56,14 @@ namespace Open_Rails_Triage.Trello
 					.Select(json => new Card(this, json))
 					.ToList();
 			return CardCollections[url];
+		}
+
+		public async Task<Checklist> GetChecklist(string id)
+		{
+			var url = $"https://api.trello.com/1/checklist/{id}?key={Key}&token={Token}";
+			if (!Checklists.ContainsKey(url))
+				Checklists[url] = new Checklist(this, await Get<JsonChecklist>(url));
+			return Checklists[url];
 		}
 	}
 }

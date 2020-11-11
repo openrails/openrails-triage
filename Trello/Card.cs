@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Open_Rails_Triage.Trello
 {
@@ -12,6 +14,7 @@ namespace Open_Rails_Triage.Trello
 		public string desc;
 		public List<string> idMembersVoted;
 		public List<string> idLabels;
+		public List<string> idChecklists;
 		public Uri url;
 		public float pos;
 	}
@@ -28,6 +31,7 @@ namespace Open_Rails_Triage.Trello
 		public int LabelCount => Json.idLabels.Count;
 		public Uri Uri => Json.url;
 		public float Position => Json.pos;
+		public async Task<List<Checklist>> GetChecklists() => new List<Checklist>(await Task.WhenAll(Json.idChecklists.Select(async checklist => await Cache.GetChecklist(checklist))));
 
 		internal readonly Cache Cache;
 		internal readonly JsonCard Json;
