@@ -11,6 +11,7 @@ namespace Open_Rails_Triage.Trello
 		public string name;
 		public string desc;
 		public List<string> idMembersVoted;
+		public List<string> idLabels;
 		public Uri url;
 		public float pos;
 	}
@@ -24,6 +25,7 @@ namespace Open_Rails_Triage.Trello
 		public string Name => Json.name;
 		public string Description => Json.desc;
 		public int Votes => Json.idMembersVoted.Count;
+		public int LabelCount => Json.idLabels.Count;
 		public Uri Uri => Json.url;
 		public float Position => Json.pos;
 

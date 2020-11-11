@@ -169,6 +169,9 @@
 					"1": "**Blueprint:** https://blueprints.launchpad.net/or/+spec/"
 				}
 			}
+		},
+		"labels": {
+			"required": true
 		}
 	}
 }

@@ -110,3 +110,4 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "(card): has more votes than card above"
 * "(card): no _link type_ link is found" - when a discussion link and/or blueprint link is missing
 * "(card): no normal _link type_ link is found" - when a discussion link and/or blueprint link is present but not in the expected form
+* "(card): no labels found" - when required labels are missing

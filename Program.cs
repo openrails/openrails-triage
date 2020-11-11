@@ -584,6 +584,18 @@ namespace Open_Rails_Triage
 							}
 						}
 					}
+
+					var label = config.GetSection("labels");
+					if (IsIncluded(list.Name, label["includeLists"], label["excludeLists"]))
+					{
+						if (label["required"] == "True")
+						{
+							if (card.LabelCount == 0)
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no labels found");
+							}
+						}
+					}
 				}
 			}
 		}
