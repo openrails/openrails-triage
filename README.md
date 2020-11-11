@@ -112,3 +112,4 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "(card): no normal _link type_ link is found" - when a discussion link and/or blueprint link is present but not in the expected form
 * "(card): no labels found" - when required labels are missing
 * "(card): no _type_ checklist found" - when a required checklist is missing
+* "(card): _type_ checklist order is _actual order_; expected _expected order_ - when checklist items are in the wrong order

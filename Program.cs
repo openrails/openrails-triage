@@ -607,6 +607,17 @@ namespace Open_Rails_Triage
 							{
 								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {checklistConfig.Key} checklist found");
 							}
+							else
+							{
+								if (checklistConfig["order"] != null)
+								{
+									var order = String.Join(",", checklist.Items.OrderBy(item => item.Position).Select(item => item.Name));
+									if (checklistConfig["order"] != order)
+									{
+										Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist order is {order}; expected {checklistConfig["order"]}");
+									}
+								}
+							}
 						}
 					}
 				}
