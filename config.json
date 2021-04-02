@@ -176,7 +176,10 @@
 		"checklists": {
 			"Progress": {
 				"includeLists": "^1\\.[2-9]",
-				"order": "Discussion,Implementation,Merged"
+				"order": "Discussion,Implementation,Merged",
+				"Discussion": {
+					"link": "discussion"
+				}
 			}
 		}
 	}

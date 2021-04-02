@@ -569,6 +569,7 @@ namespace Open_Rails_Triage
 
 				foreach (var card in cards)
 				{
+					var validLinks = new HashSet<string>();
 					foreach (var linkConfig in config.GetSection("links").GetChildren())
 					{
 						if (IsIncluded(list.Name, linkConfig["includeLists"], linkConfig["excludeLists"]))
@@ -581,6 +582,10 @@ namespace Open_Rails_Triage
 							else if (!forms.Any(form => card.Description.Contains(form.Value)))
 							{
 								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no normal {linkConfig.Key} link is found");
+							}
+							else
+							{
+								validLinks.Add(linkConfig.Key);
 							}
 						}
 					}
@@ -615,6 +620,18 @@ namespace Open_Rails_Triage
 									if (checklistConfig["order"] != order)
 									{
 										Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist order is {order}; expected {checklistConfig["order"]}");
+									}
+									foreach (var orderName in checklistConfig["order"].Split(","))
+									{
+										if (checklistConfig[$"{orderName}:link"] != null)
+										{
+											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
+											var expectedComplete = validLinks.Contains(checklistConfig[$"{orderName}:link"]);
+											if (complete != expectedComplete)
+											{
+												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
+											}
+										}
 									}
 								}
 							}

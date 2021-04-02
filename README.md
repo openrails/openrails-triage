@@ -113,3 +113,4 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "(card): no labels found" - when required labels are missing
 * "(card): no _type_ checklist found" - when a required checklist is missing
 * "(card): _type_ checklist order is _actual order_; expected _expected order_ - when checklist items are in the wrong order
+* "(card): _type_ checklist item _name_ is _complete_; expected _complete_
