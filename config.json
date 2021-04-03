@@ -58,6 +58,7 @@
 			"scanAttachments": {
 				"1": "log"
 			},
+			"duplicateMinWords": 3,
 			"idealTitle": {
 				"version": "^Version\\s+=\\s+([XU](?:[\\.\\d]+-)?\\d+|[\\.\\d]+)(?:-g[0-9a-f]+)?\\s*$",
 				"route": "^Route\\s+=\\s+(.*?)\\s*$",
