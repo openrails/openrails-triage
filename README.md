@@ -70,6 +70,7 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
     * signals
     * sounds
     * timetable
+* "Possible duplicate _match_% - _title_" - when the ideal title looks similar to earlier bugs, they are suggested as duplicates
 * "Status should be Triaged" when:
   * Current status is one of:
     * New

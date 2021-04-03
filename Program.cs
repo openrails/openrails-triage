@@ -106,6 +106,9 @@ namespace Open_Rails_Triage
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
 			var commitReferencesConfig = config.GetSection("commits").GetSection("bugReferences");
 			var commitReferencesSource = GetConfigPatternValueMatchers(commitReferencesConfig.GetSection("source"));
+			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "1");
+
+			var bugDuplicates = new Dictionary<string, (string Title, string Link)>();
 
 			foreach (var bugTask in await project.GetRecentBugTasks(DateTimeOffset.Parse(bugsConfig["startDate"])))
 			{
@@ -172,6 +175,32 @@ namespace Open_Rails_Triage
 							issues.Add($"Extra known tag {tag}");
 						}
 					}
+				}
+
+				var duplicates = new List<(double Match, string Link)>();
+				var duplicateTitleWords = idealTagsTitle.Split(" ");
+				for (var i = duplicateTitleWords.Length; i >= duplicateMinWords; i--)
+				{
+					var duplicateTitle = String.Join(" ", duplicateTitleWords.Take(i));
+					if (bugDuplicates.ContainsKey(duplicateTitle))
+					{
+						if (!duplicates.Any(d => d.Link == bugDuplicates[duplicateTitle].Link))
+						{
+							duplicates.Add((
+								50d * duplicateTitle.Length / idealTagsTitle.Length
+								+ 50d * duplicateTitle.Length / bugDuplicates[duplicateTitle].Title.Length,
+								bugDuplicates[duplicateTitle].Link
+							));
+						}
+					}
+					else
+					{
+						bugDuplicates[duplicateTitle] = (bug.Name, GetBugLink(bugTask, bug));
+					}
+				}
+				foreach (var duplicate in duplicates.OrderBy(d => -d.Match))
+				{
+					issues.Add($"Possible duplicate {duplicate.Match:F0}% - {duplicate.Link}");
 				}
 
 				foreach (var idealStatusConfig in bugsConfig.GetSection("idealStatus").GetChildren())
@@ -275,12 +304,17 @@ namespace Open_Rails_Triage
 			if (issues.Count > 0)
 			{
 				Console.WriteLine(
-					$"- [{bug.Name} ({String.Join(", ", bug.Tags)})]({bugTask.Json.web_link})\n" +
+					$"- {GetBugLink(bugTask, bug)}\n" +
 					$"  - **Status:** {bugTask.Status}, {bugTask.Importance}, {milestone?.Name}\n" +
 					String.Join("\n", issues.Select(issue => $"  - **Issue:** {issue}"))
 				);
 				Console.WriteLine();
 			}
+		}
+
+		static string GetBugLink(BugTask bugTask, Bug bug)
+		{
+			return $"[{bug.Name} ({String.Join(", ", bug.Tags)})]({bugTask.Json.web_link})";
 		}
 
 		static string GetBugIdealTitle(IConfigurationSection config, string log)
