@@ -59,7 +59,7 @@
 				"1": "log"
 			},
 			"idealTitle": {
-				"version": "^Version\\s+=\\s+(X\\d+|[\\.\\d]+)\\s*$",
+				"version": "^Version\\s+=\\s+([XU](?:[\\.\\d]+-)?\\d+|[\\.\\d]+)(?:-g[0-9a-f]+)?\\s*$",
 				"route": "^Route\\s+=\\s+(.*?)\\s*$",
 				"activity": "^Activity\\s+=\\s+(.*?)\\s+\\(.*\\)$",
 				"error": "^Error: (.*)$",
