@@ -35,6 +35,7 @@ namespace Open_Rails_Triage
 
 				AsyncMain(new ConfigurationBuilder()
 					.AddJsonFile(config.Value.FullName, true)
+					.AddJsonFile(config.Value.FullName.Replace(".json", "-secret.json"), true)
 					.Build(), verbose.Value).Wait();
 			}
 			catch (CommandLineParser.Exceptions.CommandLineException e)
@@ -46,19 +47,22 @@ namespace Open_Rails_Triage
 		static async Task AsyncMain(IConfigurationRoot config, bool verbose)
 		{
 			var gitConfig = config.GetSection("git");
+			var gitHubConfig = config.GetSection("github");
 			var launchpadConfig = config.GetSection("launchpad");
-			var launchpadCommitsConfig = launchpadConfig.GetSection("commits");
 
 			var git = new Git.Project(GetGitPath(), verbose);
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
+			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(gitConfig["startDate"]));
+
+			var gitHub = new GitHub.Project(gitHubConfig);
+
 			var launchpad = new Launchpad.Cache();
 			var launchpadProject = await launchpad.GetProject(launchpadConfig["projectUrl"]);
-			var launchpadCommits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(launchpadCommitsConfig["startDate"]));
 
-			CommitTriage(launchpadCommits, gitConfig);
-			await BugTriage(launchpadProject, launchpadConfig, launchpadCommits);
-			await SpecificationTriage(launchpadProject, launchpadConfig, launchpadCommits);
+			await CommitTriage(commits, gitConfig, gitHub);
+			await BugTriage(launchpadProject, launchpadConfig, commits);
+			await SpecificationTriage(launchpadProject, launchpadConfig, commits);
 			await SpecificationApprovals(launchpadProject);
 		}
 
@@ -68,22 +72,33 @@ namespace Open_Rails_Triage
 			return Path.Combine(Path.GetDirectoryName(appFilePath), "git");
 		}
 
-		static void CommitTriage(List<Commit> commits, IConfigurationSection gitConfig)
+		static async Task CommitTriage(List<Commit> commits, IConfigurationSection gitConfig, GitHub.Project gitHub)
 		{
 			Console.WriteLine("Commit triage");
 			Console.WriteLine("=============");
 			Console.WriteLine();
 
 			var webUrlConfig = gitConfig.GetSection("webUrl");
-			var commitMessagesConfig = gitConfig.GetSection("commitMessages");
-			var forms = GetConfigPatternMatchers(commitMessagesConfig.GetSection("expectedForms"));
+			var exceptionalLabels = gitConfig.GetSection("references:exceptionalLabels").GetChildren().Select(item => item.Value);
+			int.TryParse(gitConfig["references:minimumLines"], out var minimumLines);
+			var forms = GetConfigPatternValueMatchers(gitConfig.GetSection("references:expectedForms"));
 			foreach (var commit in commits)
 			{
-				if (!forms.Any(pattern => pattern(commit.Message)))
+				var pr = await gitHub.GetPullRequest(commit);
+				if (pr != null)
 				{
+					if (pr.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
+					if (pr.Additions <= minimumLines && pr.Deletions <= minimumLines) continue;
+				}
+
+				var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
+				commit.References.AddRange(forms.Select(form => form(message)).Where(match => match.Length > 0));
+				if (commit.References.Count == 0)
+				{
+					var labels = pr != null ? string.Join(", ", pr.Labels.Nodes.Select(n => n.Name)) : "";
 					Console.WriteLine(
-						$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
-						$"  - **Issue:** {commitMessagesConfig["error"]}"
+						$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {labels} **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
+						$"  - **Issue:** {gitConfig["references:error"]}"
 					);
 					Console.WriteLine();
 				}
