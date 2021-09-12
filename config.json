@@ -1,20 +1,30 @@
 {
 	"git": {
-		"projectUrl": "https://git.launchpad.net/or",
+		"projectUrl": "https://github.com/openrails/openrails",
 		"webUrl": {
-			"commit": "https://git.launchpad.net/or/commit/?id=%KEY%"
+			"commit": "https://github.com/openrails/openrails/commit/%KEY%"
 		},
 		"branch": "master",
-		"commitMessages": {
-			"expectedForms": {
-				"1": "/\\+bug/",
-				"2": "bug #?\\d+",
-				"3": "/\\+spec/",
-				"4": "^Revert \".*\"$",
-				"5": "\\b(contrib|manual|locales?|build|release|website)\\b"
+		"startDate": "2019-01-06T00:00:00Z",
+		"references": {
+			"exceptionalLabels": {
+				"1": "documentation",
+				"2": "locales",
+				"3": "infrastructure",
+				"4": "website"
 			},
-			"error": "Missing expected link to bug or specification"
+			"minimumLines": 10,
+			"expectedForms": {
+				"1": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+)",
+				"2": "(https://blueprints\\.launchpad\\.net/or/\\+spec/[a-z-]+)",
+				"3": "(https://trello\\.com/c/[0-9a-zA-Z]+)"
+			},
+			"error": "Missing expected link to bug or feature, or exceptional labels"
 		}
+	},
+	"github": {
+		"organization": "openrails",
+		"repository": "openrails"
 	},
 	"launchpad": {
 		"projectUrl": "https://api.launchpad.net/devel/or",
@@ -37,7 +47,6 @@
 			}
 		},
 		"commits": {
-			"startDate": "2018-12-09T00:00:00Z",
 			"currentMilestone": "1.4",
 			"bugReferences": {
 				"source": {
