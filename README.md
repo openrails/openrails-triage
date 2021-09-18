@@ -5,12 +5,22 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 ## Commit triage
 
 * All commits must match one of:
-  * Link to Launchpad bug or "bug _number_" or "bug #_number_" to indicate a bug fix
-  * Link to Launchpad blueprint to indicate a feature update
-  * The pattern "Revert "_commit message_"" to revert an earlier commit
-  * The word "manual" to indicate documentation changes
-  * The word "locale" or "locales" to indicate localisation changes
-  * The word "website" to indicate website changes
+  * A GitHub pull request with any of the following labels:
+    * documentation
+    * locales
+    * infrastructure
+    * website
+  * <= 10 additions and <= 10 deletions - small changes are allow to bypass normal rules
+  * A GitHub pull request with any of the following labels **and** and of the following links:
+    * label: bug
+    * label: enhancement
+    * label: refactoring
+    * link: Launchpad bug
+    * link: Launchpad specification
+    * link: Trello card
+* Possible issues:
+  * "Missing required labels"
+  * "Missing required references"
 
 ## Bug triage
 
@@ -90,7 +100,7 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "No assignee set but bug is fixed"
 * "No milestone set but bug is fixed"
 
-## Blueprint triage
+## Specification triage
 
 * "Direction is approved but priority is missing"
 * "Definition is approved but direction is not approved"

@@ -14,12 +14,12 @@
 				"4": "website"
 			},
 			"minimumLines": 10,
-			"links": {
-				"bug": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+)",
-				"enhancement,refactoring": "(https://blueprints\\.launchpad\\.net/or/\\+spec/[0-9a-z-]+|https://trello\\.com/c/[0-9a-zA-Z]+)"
+			"requiredLabels": {
+				"1": "bug",
+				"2": "enhancement",
+				"3": "refactoring"
 			},
-			"errorLabels": "Missing expected labels",
-			"errorLinks": "Missing expected link to bug or feature, or exceptional labels"
+			"references": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+|https://blueprints\\.launchpad\\.net/or/\\+spec/[0-9a-z-]+|https://trello\\.com/c/[0-9a-zA-Z]+)"
 		}
 	},
 	"github": {
@@ -28,6 +28,7 @@
 	},
 	"launchpad": {
 		"projectUrl": "https://api.launchpad.net/devel/or",
+		"currentMilestone": "1.4",
 		"links": {
 			"discussion": {
 				"startDate": "2015-09-20T00:00:00Z",
@@ -44,21 +45,6 @@
 				"expectedForms": {
 					"1": "Roadmap: https://trello.com/c/"
 				}
-			}
-		},
-		"commits": {
-			"currentMilestone": "1.4",
-			"bugReferences": {
-				"source": {
-					"1": "fixed in (?:[#Xx]\\.?)(\\d{4})\\b"
-				},
-				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
-			},
-			"specificationReferences": {
-				"source": {
-					"1": "\\b(?:[#Xx]\\.?)(\\d{4})\\b"
-				},
-				"target": "git-svn-id: http://svn.uktrainsim.com/svn/openrails/trunk@%1 "
 			}
 		},
 		"bugs": {
