@@ -14,12 +14,12 @@
 				"4": "website"
 			},
 			"minimumLines": 10,
-			"expectedForms": {
-				"1": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+)",
-				"2": "(https://blueprints\\.launchpad\\.net/or/\\+spec/[a-z-]+)",
-				"3": "(https://trello\\.com/c/[0-9a-zA-Z]+)"
+			"links": {
+				"bug": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+)",
+				"enhancement,refactoring": "(https://blueprints\\.launchpad\\.net/or/\\+spec/[0-9a-z-]+|https://trello\\.com/c/[0-9a-zA-Z]+)"
 			},
-			"error": "Missing expected link to bug or feature, or exceptional labels"
+			"errorLabels": "Missing expected labels",
+			"errorLinks": "Missing expected link to bug or feature, or exceptional labels"
 		}
 	},
 	"github": {
