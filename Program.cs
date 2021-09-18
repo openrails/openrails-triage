@@ -81,8 +81,8 @@ namespace Open_Rails_Triage
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var exceptionalLabels = gitConfig.GetSection("references:exceptionalLabels").GetChildren().Select(item => item.Value);
 			int.TryParse(gitConfig["references:minimumLines"], out var minimumLines);
-			var labelNames = gitConfig.GetSection("references:links").GetChildren().SelectMany(node => node.Key.Split(','));
-			var linkMatchers = GetConfigNamedPatternValueMatchers(gitConfig.GetSection("references:links"));
+			var requiredLabels = gitConfig.GetSection("references:requiredLabels").GetChildren().Select(node => node.Value);
+			var referencePattern = new Regex(gitConfig["references:references"]);
 			foreach (var commit in commits)
 			{
 				var pr = await gitHub.GetPullRequest(commit);
@@ -93,38 +93,19 @@ namespace Open_Rails_Triage
 				}
 				var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
 				var labels = pr?.Labels.Nodes.Select(n => n.Name);
-				var links = linkMatchers.Select(matcher => matcher(message)).Where(match => match.Value.Length > 0);
+				var references = referencePattern.Matches(message).Select(match => match.Value);
+
+				commit.References.AddRange(references);
 
 				var issues = new List<string>();
 
-				if (pr != null)
+				if (labels != null && !requiredLabels.Any(label => labels.Contains(label)))
 				{
-					var knownLabels = labelNames.Where(label => labels.Contains(label));
-					if (knownLabels.Count() > 0)
-					{
-						foreach (var knownLabel in knownLabels)
-						{
-							if (!links.Any(label => label.Name.Contains(knownLabel)))
-							{
-								issues.Add($"Missing expected link for {knownLabel}");
-							}
-						}
-						foreach (var link in links)
-						{
-							if (!link.Name.Any(label => knownLabels.Contains(label)))
-							{
-								issues.Add($"Missing expected label for {string.Join(",", link.Name)}");
-							}
-						}
-					}
-					else
-					{
-						issues.Add(gitConfig["references:errorLabels"]);
-					}
+					issues.Add("Missing required labels");
 				}
-				else if (links.Count() == 0)
+				if (references.Count() == 0)
 				{
-					issues.Add(gitConfig["references:errorLinks"]);
+					issues.Add("Missing required references");
 				}
 
 				if (issues.Count > 0)
@@ -147,8 +128,6 @@ namespace Open_Rails_Triage
 
 			var bugsConfig = config.GetSection("bugs");
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
-			var commitReferencesConfig = config.GetSection("commits").GetSection("bugReferences");
-			var commitReferencesSource = GetConfigPatternValueMatchers(commitReferencesConfig.GetSection("source"));
 			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "1");
 
 			var bugDuplicates = new Dictionary<string, (string Title, string Link)>();
@@ -256,19 +235,7 @@ namespace Open_Rails_Triage
 					}
 				}
 
-				var commitMentions = commits.Where(commit => commit.Message.Contains(bugTask.Json.web_link));
-				foreach (var message in await bug.GetMessages())
-				{
-					foreach (var referenceSource in commitReferencesSource)
-					{
-						var match = referenceSource(message.Description);
-						if (match != "")
-						{
-							var target = commitReferencesConfig["target"].Replace("%1", match);
-							commitMentions = commitMentions.Union(commits.Where(commit => commit.Message.Contains(target)));
-						}
-					}
-				}
+				var commitMentions = commits.Where(commit => commit.References.Contains(bugTask.Json.web_link));
 				if (commitMentions.Any())
 				{
 					if (bugTask.Status < Status.InProgress)
@@ -481,14 +448,13 @@ namespace Open_Rails_Triage
 			Console.WriteLine();
 
 			var commitsConfig = config.GetSection("commits");
-			var commitReferencesConfig = commitsConfig.GetSection("specificationReferences");
-			var commitReferencesSource = commitReferencesConfig.GetSection("source").GetChildren();
 
 			foreach (var specification in await project.GetSpecifications())
 			{
 				var milestone = await specification.GetMilestone();
 
 				var issues = new List<string>();
+
 				if (specification.Direction == Direction.Approved
 					&& specification.Priority <= Priority.Undefined)
 				{
@@ -545,26 +511,13 @@ namespace Open_Rails_Triage
 				{
 					issues.Add("Implementation is completed but milestone is missing");
 				}
-				var commitMentions = commits.Where(commit => commit.Message.Contains(specification.Json.web_link));
-				if (specification.Whiteboard != null)
-				{
-					foreach (var referenceSource in commitReferencesSource)
-					{
-						var match = Regex.Match(specification.Whiteboard, referenceSource.Value, RegexOptions.IgnoreCase);
-						while (match.Success)
-						{
-							var target = commitReferencesConfig["target"].Replace("%1", match.Groups[1].Value);
-							commitMentions = commitMentions.Union(commits.Where(commit => commit.Message.Contains(target)));
-							match = match.NextMatch();
-						}
-					}
-				}
+				var commitMentions = commits.Where(commit => commit.References.Contains(specification.Json.web_link));
 				if (commitMentions.Any())
 				{
 					if (milestone != null
-						&& milestone.Id != commitsConfig["currentMilestone"])
+						&& milestone.Id != config["currentMilestone"])
 					{
-						issues.Add($"Code was committed but milestone is {milestone.Id} (expected missing/{commitsConfig["currentMilestone"]})");
+						issues.Add($"Code was committed but milestone is {milestone.Id} (expected missing/{config["currentMilestone"]})");
 					}
 					if (specification.Definition != Definition.Approved
 						&& specification.Definition <= Definition.New)
@@ -582,11 +535,12 @@ namespace Open_Rails_Triage
 				{
 					if (specification.Implementation == Implementation.Implemented
 						&& milestone != null
-						&& milestone.Id == commitsConfig["currentMilestone"])
+						&& milestone.Id == config["currentMilestone"])
 					{
 						issues.Add("No code was committed but implementation for current milestone is complete");
 					}
 				}
+
 				if (issues.Count > 0)
 				{
 					Console.WriteLine(
@@ -636,15 +590,6 @@ namespace Open_Rails_Triage
 				.ToList();
 
 			return patterns.Select<Regex, Func<string, string>>(pattern => test => pattern.Match(test)?.Groups?[1].Value);
-		}
-
-		static IEnumerable<Func<string, (string[] Name, string Value)>> GetConfigNamedPatternValueMatchers(IConfigurationSection config)
-		{
-			var patterns = config.GetChildren()
-				.Select(pattern => (Name: pattern.Key.Split(','), Regex: new Regex(pattern.Value, RegexOptions.IgnoreCase)))
-				.ToList();
-
-			return patterns.Select<(string[] Name, Regex Regex), Func<string, (string[] Name, string Value)>>(pattern => test => (Name: pattern.Name, Value: pattern.Regex.Match(test)?.Groups?[1].Value));
 		}
 
 		static bool IsValuePatternMatch(string value, IConfigurationSection config)
