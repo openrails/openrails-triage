@@ -86,7 +86,8 @@ namespace Open_Rails_Triage
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var exceptionalLabels = gitConfig.GetSection("references:exceptionalLabels").GetChildren().Select(item => item.Value);
 			int.TryParse(gitConfig["references:minimumLines"], out var minimumLines);
-			var forms = GetConfigPatternValueMatchers(gitConfig.GetSection("references:expectedForms"));
+			var labelNames = gitConfig.GetSection("references:links").GetChildren().SelectMany(node => node.Key.Split(','));
+			var linkMatchers = GetConfigNamedPatternValueMatchers(gitConfig.GetSection("references:links"));
 			foreach (var commit in commits)
 			{
 				var pr = await gitHub.GetPullRequest(commit);
@@ -95,16 +96,49 @@ namespace Open_Rails_Triage
 					if (pr.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
 					if (pr.Additions <= minimumLines && pr.Deletions <= minimumLines) continue;
 				}
-
 				var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
-				commit.References.AddRange(forms.Select(form => form(message)).Where(match => match.Length > 0));
-				if (commit.References.Count == 0)
+				var labels = pr?.Labels.Nodes.Select(n => n.Name);
+				var links = linkMatchers.Select(matcher => matcher(message)).Where(match => match.Value.Length > 0);
+
+				var issues = new List<string>();
+
+				if (pr != null)
 				{
-					var labels = pr != null ? string.Join(", ", pr.Labels.Nodes.Select(n => n.Name)) : "";
-					Console.WriteLine(
-						$"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {labels} **at** {commit.AuthorDate} **by** {commit.AuthorName}\n" +
-						$"  - **Issue:** {gitConfig["references:error"]}"
-					);
+					var knownLabels = labelNames.Where(label => labels.Contains(label));
+					if (knownLabels.Count() > 0)
+					{
+						foreach (var knownLabel in knownLabels)
+						{
+							if (!links.Any(label => label.Name.Contains(knownLabel)))
+							{
+								issues.Add($"Missing expected link for {knownLabel}");
+							}
+						}
+						foreach (var link in links)
+						{
+							if (!link.Name.Any(label => knownLabels.Contains(label)))
+							{
+								issues.Add($"Missing expected label for {string.Join(",", link.Name)}");
+							}
+						}
+					}
+					else
+					{
+						issues.Add(gitConfig["references:errorLabels"]);
+					}
+				}
+				else if (links.Count() == 0)
+				{
+					issues.Add(gitConfig["references:errorLinks"]);
+				}
+
+				if (issues.Count > 0)
+				{
+					Console.WriteLine($"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {string.Join(", ", labels)} **at** {commit.AuthorDate} **by** {commit.AuthorName}");
+					foreach (var issue in issues)
+					{
+						Console.WriteLine($"  - **Issue:** {issue}");
+					}
 					Console.WriteLine();
 				}
 			}
@@ -705,6 +739,15 @@ namespace Open_Rails_Triage
 				.ToList();
 
 			return patterns.Select<Regex, Func<string, string>>(pattern => test => pattern.Match(test)?.Groups?[1].Value);
+		}
+
+		static IEnumerable<Func<string, (string[] Name, string Value)>> GetConfigNamedPatternValueMatchers(IConfigurationSection config)
+		{
+			var patterns = config.GetChildren()
+				.Select(pattern => (Name: pattern.Key.Split(','), Regex: new Regex(pattern.Value, RegexOptions.IgnoreCase)))
+				.ToList();
+
+			return patterns.Select<(string[] Name, Regex Regex), Func<string, (string[] Name, string Value)>>(pattern => test => (Name: pattern.Name, Value: pattern.Regex.Match(test)?.Groups?[1].Value));
 		}
 
 		static bool IsValuePatternMatch(string value, IConfigurationSection config)
