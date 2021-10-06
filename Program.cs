@@ -85,32 +85,34 @@ namespace Open_Rails_Triage
 			var referencePattern = new Regex(gitConfig["references:references"]);
 			foreach (var commit in commits)
 			{
-				var pr = await gitHub.GetPullRequest(commit);
-				if (pr != null)
+				var data = await GetCommitDetails(gitHub, referencePattern, commit);
+				commit.References.AddRange(data.References);
+				foreach (var subCommit in commit.Commits)
 				{
-					if (pr.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
-					if (pr.Additions <= minimumLines && pr.Deletions <= minimumLines) continue;
+					var subData = await GetCommitDetails(gitHub, referencePattern, subCommit);
+					commit.References.AddRange(subData.References);
 				}
-				var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
-				var labels = pr?.Labels.Nodes.Select(n => n.Name);
-				var references = referencePattern.Matches(message).Select(match => match.Value);
 
-				commit.References.AddRange(references);
+				if (data.PR != null)
+				{
+					if (data.PR.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
+					if (data.PR.Additions <= minimumLines && data.PR.Deletions <= minimumLines) continue;
+				}
 
 				var issues = new List<string>();
 
-				if (labels != null && !requiredLabels.Any(label => labels.Contains(label)))
+				if (data.Labels != null && !requiredLabels.Any(label => data.Labels.Contains(label)))
 				{
 					issues.Add("Missing required labels");
 				}
-				if (references.Count() == 0)
+				if (data.References.Count() == 0)
 				{
 					issues.Add("Missing required references");
 				}
 
 				if (issues.Count > 0)
 				{
-					Console.WriteLine($"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {string.Join(", ", labels)} **at** {commit.AuthorDate} **by** {commit.AuthorName}");
+					Console.WriteLine($"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {string.Join(", ", data.Labels)} **at** {commit.AuthorDate} **by** {commit.AuthorName}");
 					foreach (var issue in issues)
 					{
 						Console.WriteLine($"  - **Issue:** {issue}");
@@ -118,6 +120,17 @@ namespace Open_Rails_Triage
 					Console.WriteLine();
 				}
 			}
+		}
+
+		static async Task<(GitHub.GraphPullRequest PR, IEnumerable<string> Labels, IEnumerable<string> References)> GetCommitDetails(GitHub.Project gitHub, Regex referencePattern, Commit commit)
+		{
+			var pr = await gitHub.GetPullRequest(commit);
+			var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
+			return (
+				PR: pr,
+				Labels: pr?.Labels.Nodes.Select(n => n.Name),
+				References: referencePattern.Matches(message).Select(match => match.Value)
+			);
 		}
 
 		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
