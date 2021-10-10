@@ -175,6 +175,9 @@
 				"order": "Discussion,Implementation,Merged",
 				"Discussion": {
 					"link": "discussion"
+				},
+				"Merged": {
+					"reference": "commit"
 				}
 			}
 		}

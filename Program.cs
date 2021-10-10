@@ -68,7 +68,7 @@ namespace Open_Rails_Triage
 
 			var trello = new Trello.Cache(trelloConfig["key"], trelloConfig["token"]);
 			var board = await trello.GetBoard(trelloConfig["board"]);
-			await RoadmapTriage(board, trelloConfig);
+			await TrelloTriage(board, trelloConfig, commits);
 		}
 
 		static string GetGitPath()
@@ -592,7 +592,7 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task RoadmapTriage(Trello.Board board, IConfigurationSection config)
+		static async Task TrelloTriage(Trello.Board board, IConfigurationSection config, List<Commit> commits)
 		{
 			Console.WriteLine("Roadmap triage");
 			Console.WriteLine("==============");
@@ -676,6 +676,15 @@ namespace Open_Rails_Triage
 										{
 											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
 											var expectedComplete = validLinks.Contains(checklistConfig[$"{orderName}:link"]);
+											if (complete != expectedComplete)
+											{
+												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
+											}
+										}
+										if (checklistConfig[$"{orderName}:reference"] == "commit")
+										{
+											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
+											var expectedComplete = commits.Any(commit => commit.References.Contains(card.Uri.ToString()));
 											if (complete != expectedComplete)
 											{
 												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
