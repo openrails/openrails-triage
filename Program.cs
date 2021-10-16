@@ -684,7 +684,9 @@ namespace Open_Rails_Triage
 										if (checklistConfig[$"{orderName}:reference"] == "commit")
 										{
 											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
-											var expectedComplete = commits.Any(commit => commit.References.Contains(card.Uri.ToString()));
+											// "https://trello.com/c/JGosmRnZ/159-consist-editor" --> "https://trello.com/c/JGosmRnZ"
+											var url = string.Join("/", card.Uri.ToString().Split('/').Take(5));
+											var expectedComplete = commits.Any(commit => commit.References.Contains(url));
 											if (complete != expectedComplete)
 											{
 												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
