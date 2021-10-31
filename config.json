@@ -146,7 +146,7 @@
 	},
 	"trello": {
 		"board": "57167c88ac24bececc9eb7ff",
-		"excludeLists": "Unsorted|Not planned|RELEASED",
+		"excludeLists": "Unsorted|Unclear|Not planned|RELEASED",
 		"excludeCards": "These cards are currently planned .* - please vote on them",
 		"sorting": "votes",
 		"links": {
