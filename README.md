@@ -105,7 +105,7 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "Direction is approved but priority is missing"
 * "Definition is approved but direction is not approved"
 * "Definition is approved but no _link type_ link is found" - when a discussion link and/or roadmap link is missing
-* "Definition is approved not no normal _link type_ link is found" - when a discussion link and/or roadmap link is missing
+* "Definition is approved not no normal _link type_ link is found" - when a discussion link and/or roadmap link is present but not in the expected form
 * "Definition is approved but approver is missing"
 * "Definition is drafting (or later) but drafter is missing"
 * "Implementation is started (or later) but definition is not approved"
@@ -115,3 +115,13 @@ A command-line tool for triage of Open Rail's various roadmap and bug systems.
 * "Code was committed but definition is not approved"
 * "Code was committed exclusively more than 28 days ago but implementation is not complete"
 * "No code was committed but implementation for current milestone is complete"
+
+## Roadmap triage
+
+* "(card): has more votes than card above"
+* "(card): no _link type_ link is found" - when a discussion link and/or blueprint link is missing
+* "(card): no normal _link type_ link is found" - when a discussion link and/or blueprint link is present but not in the expected form
+* "(card): no labels found" - when required labels are missing
+* "(card): no _type_ checklist found" - when a required checklist is missing
+* "(card): _type_ checklist order is _actual order_; expected _expected order_ - when checklist items are in the wrong order
+* "(card): _type_ checklist item _name_ is _complete_; expected _complete_

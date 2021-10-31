@@ -49,6 +49,7 @@ namespace Open_Rails_Triage
 			var gitConfig = config.GetSection("git");
 			var gitHubConfig = config.GetSection("github");
 			var launchpadConfig = config.GetSection("launchpad");
+			var trelloConfig = config.GetSection("trello");
 
 			var git = new Git.Project(GetGitPath(), verbose);
 			git.Init(gitConfig["projectUrl"]);
@@ -64,6 +65,10 @@ namespace Open_Rails_Triage
 			await BugTriage(launchpadProject, launchpadConfig, commits);
 			await SpecificationTriage(launchpadProject, launchpadConfig, commits);
 			await SpecificationApprovals(launchpadProject);
+
+			var trello = new Trello.Cache(trelloConfig["key"], trelloConfig["token"]);
+			var board = await trello.GetBoard(trelloConfig["board"]);
+			await TrelloTriage(board, trelloConfig, commits);
 		}
 
 		static string GetGitPath()
@@ -587,6 +592,115 @@ namespace Open_Rails_Triage
 			}
 		}
 
+		static async Task TrelloTriage(Trello.Board board, IConfigurationSection config, List<Commit> commits)
+		{
+			Console.WriteLine("Roadmap triage");
+			Console.WriteLine("==============");
+			Console.WriteLine();
+
+			var lists = Filter(await board.GetLists(), list => list.Name, config["includeLists"], config["excludeLists"]);
+
+			foreach (var list in lists)
+			{
+				Console.WriteLine($"- {list.Name}");
+
+				var cards = Filter(await list.GetCards(), card => card.Name, config["includeCards"], config["excludeCards"]);
+				if (config["sorting"] == "votes")
+				{
+					for (var i = 1; i < cards.Count; i++)
+					{
+						if (cards[i].Votes > cards[i - 1].Votes)
+						{
+							Console.WriteLine($"  - [{cards[i].Name}]({cards[i].Uri}): has more votes than card above ({cards[i].Votes} vs {cards[i - 1].Votes})");
+						}
+					}
+				}
+
+				foreach (var card in cards)
+				{
+					var validLinks = new HashSet<string>();
+					foreach (var linkConfig in config.GetSection("links").GetChildren())
+					{
+						if (IsIncluded(list.Name, linkConfig["includeLists"], linkConfig["excludeLists"]))
+						{
+							var forms = linkConfig.GetSection("expectedForms").GetChildren();
+							if (!card.Description.Contains(linkConfig["baseUrl"]))
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {linkConfig.Key} link is found");
+							}
+							else if (!forms.Any(form => card.Description.Contains(form.Value)))
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no normal {linkConfig.Key} link is found");
+							}
+							else
+							{
+								validLinks.Add(linkConfig.Key);
+							}
+						}
+					}
+
+					var labelConfig = config.GetSection("labels");
+					if (IsIncluded(list.Name, labelConfig["includeLists"], labelConfig["excludeLists"]))
+					{
+						if (labelConfig["required"] == "True")
+						{
+							if (card.LabelCount == 0)
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no labels found");
+							}
+						}
+					}
+
+					var checklists = await card.GetChecklists();
+					foreach (var checklistConfig in config.GetSection("checklists").GetChildren())
+					{
+						if (IsIncluded(list.Name, checklistConfig["includeLists"], checklistConfig["excludeLists"]))
+						{
+							var checklist = checklists.Find(item => item.Name == checklistConfig.Key);
+							if (checklist == null)
+							{
+								Console.WriteLine($"  - [{card.Name}]({card.Uri}): no {checklistConfig.Key} checklist found");
+							}
+							else
+							{
+								if (checklistConfig["order"] != null)
+								{
+									var order = String.Join(",", checklist.Items.OrderBy(item => item.Position).Select(item => item.Name));
+									if (checklistConfig["order"] != order)
+									{
+										Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist order is {order}; expected {checklistConfig["order"]}");
+									}
+									foreach (var orderName in checklistConfig["order"].Split(","))
+									{
+										if (checklistConfig[$"{orderName}:link"] != null)
+										{
+											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
+											var expectedComplete = validLinks.Contains(checklistConfig[$"{orderName}:link"]);
+											if (complete != expectedComplete)
+											{
+												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
+											}
+										}
+										if (checklistConfig[$"{orderName}:reference"] == "commit")
+										{
+											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
+											// "https://trello.com/c/JGosmRnZ/159-consist-editor" --> "https://trello.com/c/JGosmRnZ"
+											var url = string.Join("/", card.Uri.ToString().Split('/').Take(5));
+											var expectedComplete = commits.Any(commit => commit.References.Contains(url));
+											if (complete != expectedComplete)
+											{
+												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		static IEnumerable<Func<string, bool>> GetConfigPatternMatchers(IConfigurationSection config)
 		{
 			var patterns = config.GetChildren()
@@ -659,6 +773,42 @@ namespace Open_Rails_Triage
 				}
 			}
 
+			return true;
+		}
+
+		static List<T> Filter<T>(List<T> items, Func<T, string> field, string include, string exclude)
+		{
+			if (include != null)
+			{
+				var filter = new Regex(include);
+				items = items.Where(item => filter.IsMatch(field(item))).ToList();
+			}
+			if (exclude != null)
+			{
+				var filter = new Regex(exclude);
+				items = items.Where(item => !filter.IsMatch(field(item))).ToList();
+			}
+			return items;
+		}
+
+		static bool IsIncluded(string value, string include, string exclude)
+		{
+			if (include != null)
+			{
+				var filter = new Regex(include);
+				if (!filter.IsMatch(value))
+				{
+					return false;
+				}
+			}
+			if (exclude != null)
+			{
+				var filter = new Regex(exclude);
+				if (filter.IsMatch(value))
+				{
+					return false;
+				}
+			}
 			return true;
 		}
 	}
