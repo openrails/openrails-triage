@@ -145,6 +145,7 @@ namespace Open_Rails_Triage
 			Console.WriteLine();
 
 			var bugsConfig = config.GetSection("bugs");
+			var startMilestone = bugsConfig["startMilestone"];
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
 			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "1");
 
@@ -159,6 +160,11 @@ namespace Open_Rails_Triage
 					.Where(attachment => attachment.Type != Launchpad.Type.Patch
 						&& scanAttachments.Any(pattern => pattern(attachment.Name)))
 					.Select(async attachment => await attachment.GetData()));
+
+				if (milestone != null && startMilestone != null && string.Compare(milestone.Id, startMilestone) < 0)
+				{
+					continue;
+				}
 
 				var issues = new List<string>();
 
