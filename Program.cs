@@ -148,6 +148,7 @@ namespace Open_Rails_Triage
 			var startMilestone = bugsConfig["startMilestone"];
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
 			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "0");
+			var minIncompleteGapMinutes = int.Parse(bugsConfig["minIncompleteGapMinutes"] ?? "1");
 
 			var bugDuplicates = new Dictionary<string, (string Title, string Link)>();
 
@@ -324,7 +325,7 @@ namespace Open_Rails_Triage
 				{
 					var lastMessage = incompleteMessages.Last();
 					var diff = lastMessage.Created - bugTask.Incomplete;
-					if (diff.TotalMinutes >= 1)
+					if (diff.TotalMinutes >= minIncompleteGapMinutes)
 					{
 						var lastMessageUser = await lastMessage.GetOwner();
 						var lastMessageAge = DateTimeOffset.Now - lastMessage.Created;
