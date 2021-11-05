@@ -147,7 +147,7 @@ namespace Open_Rails_Triage
 			var bugsConfig = config.GetSection("bugs");
 			var startMilestone = bugsConfig["startMilestone"];
 			var scanAttachments = GetConfigPatternMatchers(bugsConfig.GetSection("scanAttachments"));
-			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "1");
+			var duplicateMinWords = int.Parse(bugsConfig["duplicateMinWords"] ?? "0");
 
 			var bugDuplicates = new Dictionary<string, (string Title, string Link)>();
 
@@ -223,30 +223,33 @@ namespace Open_Rails_Triage
 					}
 				}
 
-				var duplicates = new List<(double Match, string Link)>();
-				var duplicateTitleWords = idealTagsTitle.Split(" ");
-				for (var i = duplicateTitleWords.Length; i >= duplicateMinWords; i--)
+				if (duplicateMinWords > 0)
 				{
-					var duplicateTitle = String.Join(" ", duplicateTitleWords.Take(i));
-					if (bugDuplicates.ContainsKey(duplicateTitle))
+					var duplicates = new List<(double Match, string Link)>();
+					var duplicateTitleWords = idealTagsTitle.Split(" ");
+					for (var i = duplicateTitleWords.Length; i >= duplicateMinWords; i--)
 					{
-						if (!duplicates.Any(d => d.Link == bugDuplicates[duplicateTitle].Link))
+						var duplicateTitle = String.Join(" ", duplicateTitleWords.Take(i));
+						if (bugDuplicates.ContainsKey(duplicateTitle))
 						{
-							duplicates.Add((
-								50d * duplicateTitle.Length / idealTagsTitle.Length
-								+ 50d * duplicateTitle.Length / bugDuplicates[duplicateTitle].Title.Length,
-								bugDuplicates[duplicateTitle].Link
-							));
+							if (!duplicates.Any(d => d.Link == bugDuplicates[duplicateTitle].Link))
+							{
+								duplicates.Add((
+									50d * duplicateTitle.Length / idealTagsTitle.Length
+									+ 50d * duplicateTitle.Length / bugDuplicates[duplicateTitle].Title.Length,
+									bugDuplicates[duplicateTitle].Link
+								));
+							}
+						}
+						else
+						{
+							bugDuplicates[duplicateTitle] = (bug.Name, GetBugLink(bugTask, bug));
 						}
 					}
-					else
+					foreach (var duplicate in duplicates.OrderBy(d => -d.Match))
 					{
-						bugDuplicates[duplicateTitle] = (bug.Name, GetBugLink(bugTask, bug));
+						issues.Add($"Possible duplicate {duplicate.Match:F0}% - {duplicate.Link}");
 					}
-				}
-				foreach (var duplicate in duplicates.OrderBy(d => -d.Match))
-				{
-					issues.Add($"Possible duplicate {duplicate.Match:F0}% - {duplicate.Link}");
 				}
 
 				foreach (var idealStatusConfig in bugsConfig.GetSection("idealStatus").GetChildren())
