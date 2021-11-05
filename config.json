@@ -142,7 +142,8 @@
 						"allPresent": "crash content"
 					}
 				}
-			}
+			},
+			"minIncompleteGapMinutes": "5"
 		}
 	},
 	"trello": {
