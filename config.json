@@ -49,6 +49,7 @@
 		},
 		"bugs": {
 			"startDate": "2018-12-09T00:00:00Z",
+			"startMilestone": "1.4",
 			"scanDescriptions": true,
 			"scanAttachments": {
 				"1": "log"
