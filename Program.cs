@@ -106,7 +106,7 @@ namespace Open_Rails_Triage
 
 				var issues = new List<string>();
 
-				if (data.Labels != null && !requiredLabels.Any(label => data.Labels.Contains(label)))
+				if (!requiredLabels.Any(label => data.Labels.Contains(label)))
 				{
 					issues.Add("Missing required labels");
 				}
@@ -133,7 +133,7 @@ namespace Open_Rails_Triage
 			var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
 			return (
 				PR: pr,
-				Labels: pr?.Labels.Nodes.Select(n => n.Name),
+				Labels: pr?.Labels.Nodes.Select(n => n.Name) ?? new string[0],
 				References: referencePattern.Matches(message).Select(match => match.Value)
 			);
 		}
