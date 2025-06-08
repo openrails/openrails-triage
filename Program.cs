@@ -604,8 +604,8 @@ namespace Open_Rails_Triage
 
 		static async Task TrelloTriage(Trello.Board board, IConfigurationSection config, List<Commit> commits)
 		{
-			Console.WriteLine("Roadmap triage");
-			Console.WriteLine("==============");
+			Console.WriteLine("Trello triage");
+			Console.WriteLine("=============");
 			Console.WriteLine();
 
 			var lists = Filter(await board.GetLists(), list => list.Name, config["includeLists"], config["excludeLists"]);
