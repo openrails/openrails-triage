@@ -85,7 +85,7 @@ namespace Open_Rails_Triage
 
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var exceptionalLabels = gitConfig.GetSection("references:exceptionalLabels").GetChildren().Select(item => item.Value);
-			int.TryParse(gitConfig["references:minimumLines"], out var minimumLines);
+			if (!int.TryParse(gitConfig["references:minimumLines"], out var minimumLines)) minimumLines = 0;
 			var requiredLabels = gitConfig.GetSection("references:requiredLabels").GetChildren().Select(node => node.Value);
 			var referencePattern = new Regex(gitConfig["references:references"]);
 			foreach (var commit in commits)
