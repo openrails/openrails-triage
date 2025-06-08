@@ -19,7 +19,9 @@
 				"2": "enhancement",
 				"3": "refactoring"
 			},
-			"references": "(https://bugs\\.launchpad\\.net/or/\\+bug/[0-9]+|https://blueprints\\.launchpad\\.net/or/\\+spec/[0-9a-z-]+|https://trello\\.com/c/[0-9a-zA-Z]+)"
+			"types": {
+				"anyPresent": "launchpad-bug trello-card launchpad-blueprint"
+			}
 		}
 	},
 	"github": {

@@ -18,7 +18,6 @@ namespace Open_Rails_Triage.Git
 		public string Message { get; private set; }
 		public string Summary => Message.Split('\n')[0];
 		public List<Commit> Commits { get; } = new List<Commit>();
-		public List<string> References { get; } = new List<string>();
 
 		internal Commit(string key) => (Key, Message) = (key, "");
 

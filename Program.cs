@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using Open_Rails_Triage.Git;
 using Open_Rails_Triage.Launchpad;
 
 namespace Open_Rails_Triage
@@ -46,6 +45,7 @@ namespace Open_Rails_Triage
 
 		static async Task AsyncMain(IConfigurationRoot config, bool verbose)
 		{
+			var references = new References();
 			var gitConfig = config.GetSection("git");
 			var gitHubConfig = config.GetSection("github");
 			var launchpadConfig = config.GetSection("launchpad");
@@ -54,21 +54,20 @@ namespace Open_Rails_Triage
 			var git = new Git.Project(GetGitPath(), verbose);
 			git.Init(gitConfig["projectUrl"]);
 			git.Fetch();
-			var commits = git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(gitConfig["startDate"]));
 
 			var gitHub = new GitHub.Project(gitHubConfig);
 
 			var launchpad = new Launchpad.Cache();
 			var launchpadProject = await launchpad.GetProject(launchpadConfig["projectUrl"]);
 
-			await CommitTriage(commits, gitConfig, gitHub);
-			await BugTriage(launchpadProject, launchpadConfig, commits);
-			await SpecificationTriage(launchpadProject, launchpadConfig, commits);
+			await CommitTriage(git, gitConfig, gitHub, references);
+			await BugTriage(launchpadProject, launchpadConfig, references);
+			await SpecificationTriage(launchpadProject, launchpadConfig, references);
 			await SpecificationApprovals(launchpadProject);
 
 			var trello = new Trello.Cache(trelloConfig["key"], trelloConfig["token"]);
 			var board = await trello.GetBoard(trelloConfig["board"]);
-			await TrelloTriage(board, trelloConfig, commits);
+			await TrelloTriage(board, trelloConfig, references);
 		}
 
 		static string GetGitPath()
@@ -77,7 +76,7 @@ namespace Open_Rails_Triage
 			return Path.Combine(Path.GetDirectoryName(appFilePath), "git");
 		}
 
-		static async Task CommitTriage(List<Commit> commits, IConfigurationSection gitConfig, GitHub.Project gitHub)
+		static async Task CommitTriage(Git.Project git, IConfigurationSection gitConfig, GitHub.Project gitHub, References references)
 		{
 			Console.WriteLine("Commit triage");
 			Console.WriteLine("=============");
@@ -85,39 +84,35 @@ namespace Open_Rails_Triage
 
 			var webUrlConfig = gitConfig.GetSection("webUrl");
 			var exceptionalLabels = gitConfig.GetSection("references:exceptionalLabels").GetChildren().Select(item => item.Value);
-			int.TryParse(gitConfig["references:minimumLines"], out var minimumLines);
+			if (!int.TryParse(gitConfig["references:minimumLines"], out var minimumLines)) minimumLines = 0;
 			var requiredLabels = gitConfig.GetSection("references:requiredLabels").GetChildren().Select(node => node.Value);
-			var referencePattern = new Regex(gitConfig["references:references"]);
-			foreach (var commit in commits)
-			{
-				var data = await GetCommitDetails(gitHub, referencePattern, commit);
-				commit.References.AddRange(data.References);
-				foreach (var subCommit in commit.Commits)
-				{
-					var subData = await GetCommitDetails(gitHub, referencePattern, subCommit);
-					commit.References.AddRange(subData.References);
-				}
 
-				if (data.PR != null)
+			foreach (var commit in git.GetLog(gitConfig["branch"], DateTimeOffset.Parse(gitConfig["startDate"])))
+			{
+				references.Add(commit, out var referenceTypes);
+
+				var pr = await gitHub.GetPullRequest(commit);
+				var labels = pr?.Labels.Nodes.Select(n => n.Name) ?? Array.Empty<string>();
+				if (pr != null)
 				{
-					if (data.PR.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
-					if (data.PR.Additions <= minimumLines && data.PR.Deletions <= minimumLines) continue;
+					if (pr.Labels.Nodes.Any(label => exceptionalLabels.Contains(label.Name))) continue;
+					if (pr.Additions <= minimumLines && pr.Deletions <= minimumLines) continue;
 				}
 
 				var issues = new List<string>();
 
-				if (!requiredLabels.Any(label => data.Labels.Contains(label)))
+				if (requiredLabels.Any() && !requiredLabels.Any(label => labels.Contains(label)))
 				{
 					issues.Add("Missing required labels");
 				}
-				if (data.References.Count() == 0)
+				if (!IsValuePresentMissing(gitConfig.GetSection("references:types"), referenceTypes.ToArray()))
 				{
 					issues.Add("Missing required references");
 				}
 
 				if (issues.Count > 0)
 				{
-					Console.WriteLine($"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {string.Join(", ", data.Labels)} **at** {commit.AuthorDate} **by** {commit.AuthorName}");
+					Console.WriteLine($"- [{commit.Summary}]({webUrlConfig["commit"].Replace("%KEY%", commit.Key)}) {string.Join(", ", labels)} **at** {commit.AuthorDate} **by** {commit.AuthorName}");
 					foreach (var issue in issues)
 					{
 						Console.WriteLine($"  - **Issue:** {issue}");
@@ -127,18 +122,7 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task<(GitHub.GraphPullRequest PR, IEnumerable<string> Labels, IEnumerable<string> References)> GetCommitDetails(GitHub.Project gitHub, Regex referencePattern, Commit commit)
-		{
-			var pr = await gitHub.GetPullRequest(commit);
-			var message = pr != null ? pr.Title + "\n" + pr.Body : commit.Message;
-			return (
-				PR: pr,
-				Labels: pr?.Labels.Nodes.Select(n => n.Name) ?? new string[0],
-				References: referencePattern.Matches(message).Select(match => match.Value)
-			);
-		}
-
-		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
+		static async Task BugTriage(Launchpad.Project project, IConfigurationSection config, References references)
 		{
 			Console.WriteLine("Bug triage");
 			Console.WriteLine("==========");
@@ -166,6 +150,8 @@ namespace Open_Rails_Triage
 				{
 					continue;
 				}
+
+				references.Add(bug, out var _);
 
 				var issues = new List<string>();
 
@@ -263,14 +249,13 @@ namespace Open_Rails_Triage
 					}
 				}
 
-				var commitMentions = commits.Where(commit => commit.References.Contains(bugTask.Json.web_link));
-				if (commitMentions.Any())
+				if (references.TryGetValue(bugTask.Json.web_link, out var reference) && reference.GitCommits.Any())
 				{
 					if (bugTask.Status < Status.InProgress)
 					{
 						issues.Add("Code was committed but bug is not in progress or fixed");
 					}
-					var latestCommit = commitMentions.OrderBy(commit => commit.AuthorDate).Last();
+					var latestCommit = reference.GitCommits.OrderBy(commit => commit.AuthorDate).Last();
 					if ((DateTimeOffset.Now - latestCommit.AuthorDate).TotalDays > 28
 						&& bugTask.Status < Status.FixCommitted)
 					{
@@ -469,7 +454,7 @@ namespace Open_Rails_Triage
 			return tags;
 		}
 
-		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config, List<Commit> commits)
+		static async Task SpecificationTriage(Launchpad.Project project, IConfigurationSection config, References references)
 		{
 			Console.WriteLine("Specification triage");
 			Console.WriteLine("====================");
@@ -539,8 +524,7 @@ namespace Open_Rails_Triage
 				{
 					issues.Add("Implementation is completed but milestone is missing");
 				}
-				var commitMentions = commits.Where(commit => commit.References.Contains(specification.Json.web_link));
-				if (commitMentions.Any())
+				if (references.TryGetValue(specification.Json.web_link, out var reference) && reference.GitCommits.Any())
 				{
 					if (milestone != null
 						&& milestone.Id != config["currentMilestone"])
@@ -552,7 +536,7 @@ namespace Open_Rails_Triage
 					{
 						issues.Add("Code was committed but definition is not approved");
 					}
-					var latestCommit = commitMentions.OrderBy(commit => commit.AuthorDate).Last();
+					var latestCommit = reference.GitCommits.OrderBy(commit => commit.AuthorDate).Last();
 					if ((DateTimeOffset.Now - latestCommit.AuthorDate).TotalDays > 28
 						&& specification.Implementation != Implementation.Implemented)
 					{
@@ -602,10 +586,10 @@ namespace Open_Rails_Triage
 			}
 		}
 
-		static async Task TrelloTriage(Trello.Board board, IConfigurationSection config, List<Commit> commits)
+		static async Task TrelloTriage(Trello.Board board, IConfigurationSection config, References references)
 		{
-			Console.WriteLine("Roadmap triage");
-			Console.WriteLine("==============");
+			Console.WriteLine("Trello triage");
+			Console.WriteLine("=============");
 			Console.WriteLine();
 
 			var lists = Filter(await board.GetLists(), list => list.Name, config["includeLists"], config["excludeLists"]);
@@ -696,7 +680,7 @@ namespace Open_Rails_Triage
 											var complete = checklist.Items.Find(item => item.Name == orderName)?.Complete;
 											// "https://trello.com/c/JGosmRnZ/159-consist-editor" --> "https://trello.com/c/JGosmRnZ"
 											var url = string.Join("/", card.Uri.ToString().Split('/').Take(5));
-											var expectedComplete = commits.Any(commit => commit.References.Contains(url));
+											var expectedComplete = references.TryGetValue(url, out var reference) && reference.GitCommits.Any();
 											if (complete != expectedComplete)
 											{
 												Console.WriteLine($"  - [{card.Name}]({card.Uri}): {checklistConfig.Key} checklist item {orderName} is {complete}; expected {expectedComplete}");
